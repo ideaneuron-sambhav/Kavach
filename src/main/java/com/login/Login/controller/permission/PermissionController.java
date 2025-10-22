@@ -1,0 +1,46 @@
+package com.login.Login.controller.permission;
+
+import com.login.Login.dto.Response;
+import com.login.Login.dto.permission.PermissionRequest;
+import com.login.Login.service.permission.PermissionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/permission")
+public class PermissionController {
+    @Autowired
+    PermissionService permissionService;
+
+    @PostMapping("/add")
+    public ResponseEntity<Response<?>> addPermission(@RequestBody PermissionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(permissionService.registerPermission(request));
+    }
+
+    // toggle permission
+    @PutMapping("/active/{id}")
+    public Response<?> deletePermission(@PathVariable("id") Long permissionId) {
+
+        return permissionService.togglePermission(permissionId);
+    }
+
+    // Update permission
+    @PutMapping("/update")
+    public ResponseEntity<Response<?>> updatePermission(@RequestBody PermissionRequest request) {
+        return ResponseEntity.ok(permissionService.updatePermission(request));
+    }
+
+    // List all permissions
+    @GetMapping("/list")
+    public Response<?> listPermissions() {
+        return permissionService.list();
+    }
+
+    // List permissions by role (case-insensitive)
+    @GetMapping("/role/{roleName}")
+    public Response<?> listPermissionsByRole(@PathVariable String roleName) {
+        return permissionService.listByRole(roleName.toLowerCase());
+    }
+}
