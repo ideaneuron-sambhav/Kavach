@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/credentials")
@@ -52,7 +53,7 @@ public class CredentialsController {
 
     // Generate OTP for password reveal
     @PostMapping("/otp/generate/{id}")
-    public ResponseEntity<Response<String>> generateOtp(@PathVariable Long id) {
+    public ResponseEntity<Response<Map<String,Object>>> generateOtp(@PathVariable Long id) {
         return ResponseEntity.ok(credentialsService.generateOtpForPassword(id));
     }
 

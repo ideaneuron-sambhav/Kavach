@@ -15,7 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -112,7 +115,7 @@ public class CredentialsService {
     }
 
     // Generate OTP for password reveal
-    public Response<String> generateOtpForPassword(Long credentialId) {
+    public Response<Map<String,Object>> generateOtpForPassword(Long credentialId) {
         jwtUtil.ensureAdminFromContext();
         Credentials credential = credentialsRepository.findById(credentialId)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
@@ -121,8 +124,11 @@ public class CredentialsService {
         System.out.println("Generated OTP for " + credential.getEmail()+ ": " + otpResponse.getOtp());
         System.out.println("RefId: " + otpResponse.getRefId());
 
-        return Response.<String>builder()
-                .data(otpResponse.getRefId())
+        Map<String, Object> result = new HashMap<>();
+        result.put("refId", otpResponse.getRefId());
+
+        return Response.<Map<String,Object>>builder()
+                .data(result)
                 .httpStatusCode(HttpStatus.OK.value())
                 .message("OTP generated successfully for credential ID: " + credentialId)
                 .build();

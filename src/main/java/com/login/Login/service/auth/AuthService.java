@@ -30,23 +30,24 @@ import java.util.stream.Collectors;
 public class AuthService {
 
     @Autowired
-    private UserRepository userRepo;
-
-    private final JwtUtil jwtUtil;
+    UserRepository userRepo;
+    @Autowired
+    JwtUtil jwtUtil;
 
     @Autowired
-    private final JwtBlacklistService jwtBlacklistService;
-
-    private final PermissionRepository permissionRepo;
+    JwtBlacklistService jwtBlacklistService;
 
     @Autowired
-    private final BCryptPasswordEncoder passwordEncoder;
+    PermissionRepository permissionRepo;
 
     @Autowired
-    private final OtpService otpService;
+    BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    OtpService otpService;
 
 
-    public Response<String> login(LoginRequest request) throws Exception {
+    public Response<Map<String,Object>> login(LoginRequest request) throws Exception {
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -62,21 +63,22 @@ public class AuthService {
         // Generate OTP using refId
         OtpResponse otpResponse = otpService.generateOtp(user.getEmail());
 
-
+        Map<String, Object> result = new HashMap<>();
+        result.put("refId", otpResponse.getRefId());
 
         // optional for debugging
         System.out.println("Generated OTP for " + user.getEmail() + ": " + otpResponse.getOtp());
         System.out.println("RefId: " + otpResponse.getRefId());
 
-        return Response.<String>builder()
-                .data(otpResponse.getRefId())
+        return Response.<Map<String,Object>>builder()
+                .data(result)
                 .httpStatusCode(200)
                 .message("OTP generated successfully.")
                 .build();
     }
 
     // --------------------- VERIFY OTP ---------------------
-    public Response<AuthResponse> verifyOtp(String refId, String otp) throws Exception {
+    public Response<AuthResponse> verifyOtp(String refId, String otp) {
         OtpEntry entry = otpService.getOtpEntry(refId);
         if (entry == null) {
             throw new InvalidCredentialsException("Invalid or expired OTP");
