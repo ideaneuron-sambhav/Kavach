@@ -46,7 +46,7 @@ public class AuthService {
     private final OtpService otpService;
 
 
-    public Response<OtpResponse> login(LoginRequest request) throws Exception {
+    public Response<String> login(LoginRequest request) throws Exception {
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
