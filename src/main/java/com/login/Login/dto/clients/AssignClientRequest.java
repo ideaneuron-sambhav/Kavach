@@ -8,6 +8,5 @@ public class AssignClientRequest {
     @NotNull(message = "Client ID cannot be blank")
     private Long clientId;
 
-    @NotNull(message = "User ID cannot be blank")
     private Long userId; // the user you want to assign
 }

@@ -1,6 +1,8 @@
 package com.login.Login.repository;
 
 import com.login.Login.entity.Permission;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,6 +27,7 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
     )
     List<Permission> findPermissionsByRoleName(@Param("name") String name);
 
-    // Optional: You can add custom queries here if needed
+    @Query("SELECT p FROM Permission p WHERE LOWER(p.permissionType) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Permission> searchRoles(@Param("keyword") String keyword, Pageable pageable);
 }
 

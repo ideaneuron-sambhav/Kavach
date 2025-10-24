@@ -24,7 +24,6 @@ public class Clients {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Convert(converter = AesAttributeConverter.class)
     @Column(nullable = false)
     private String name;
 

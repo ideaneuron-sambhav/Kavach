@@ -12,6 +12,10 @@ import com.login.Login.security.JwtUtil;
 import com.login.Login.repository.PermissionRepository;
 import com.login.Login.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,11 +28,18 @@ public class RoleService {
     private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
 
-    public Response<List<Role>> list() {
+    public Response<Page<Role>> list(String keyword, int page, int size) {
             jwtUtil.getAuthenticatedUserFromContext();
-            List<Role> roles = roleRepository.findAll();
-            return Response.<List<Role>>builder()
-                    .data(roles)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+            Page<Role> rolesPage;
+            if(keyword != null && !keyword.isBlank()){
+                rolesPage = roleRepository.searchRoles(keyword.trim(), pageable);
+            }else{
+                rolesPage = roleRepository.findAll(pageable);
+            }
+
+            return Response.<Page<Role>>builder()
+                    .data(rolesPage)
                     .httpStatusCode(200)
                     .message("List of all roles")
                     .build();

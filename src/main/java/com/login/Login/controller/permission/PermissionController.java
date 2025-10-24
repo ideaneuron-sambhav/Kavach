@@ -34,8 +34,10 @@ public class PermissionController {
 
     // List all permissions
     @GetMapping("/list")
-    public Response<?> listPermissions() {
-        return permissionService.list();
+    public Response<?> listPermissions(@RequestParam(defaultValue = "") String search,
+                                       @RequestParam(defaultValue = "0") int page,
+                                       @RequestParam(defaultValue = "10") int size) {
+        return permissionService.list(search, page, size);
     }
 
     // List permissions by role (case-insensitive)

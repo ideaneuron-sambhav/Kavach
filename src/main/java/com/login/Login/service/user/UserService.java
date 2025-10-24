@@ -12,10 +12,13 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.List;
 
 
 @Service
@@ -28,12 +31,19 @@ public class UserService {
     @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public Response<List<User>> listUsers() {
+    public Response<Page<User>> listUsers(String keyword, int page, int size) {
         jwtUtil.getAuthenticatedUserFromContext();
 
-        List<User> users = userRepo.findAll();
-        return Response.<List<User>>builder()
-                .data(users)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").descending());
+        Page<User> usersPage;
+        if (keyword != null && !keyword.isBlank()) {
+            usersPage = userRepo.searchUsers(keyword.trim(), pageable);
+        } else {
+            usersPage = userRepo.findAll(pageable);
+        }
+
+        return Response.<Page<User>>builder()
+                .data(usersPage)
                 .httpStatusCode(200)
                 .message("List of all users")
                 .build();
@@ -87,7 +97,7 @@ public class UserService {
                     .active(true)
                     .build();
 
-            User savedUser = userRepo.save(user);
+            userRepo.save(user);
 
             return Response.<UserResponse>builder()
                     .data(UserResponse.builder()

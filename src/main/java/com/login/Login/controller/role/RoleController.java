@@ -15,8 +15,10 @@ public class RoleController {
     RoleService roleService;
     // List all roles
     @GetMapping("/list")
-    public ResponseEntity<Response<?>> listRoles() {
-        return ResponseEntity.ok(roleService.list());
+    public ResponseEntity<Response<?>> listRoles(@RequestParam(defaultValue = "") String search,
+                                                 @RequestParam(defaultValue = "0") int page,
+                                                 @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(roleService.list(search, page, size));
     }
 
     // Add a new role

@@ -6,20 +6,23 @@ import com.login.Login.dto.credentials.CredentialsResponse;
 import com.login.Login.dto.credentials.CredentialRevealResponse;
 import com.login.Login.entity.Clients;
 import com.login.Login.entity.Credentials;
+import com.login.Login.entity.User;
 import com.login.Login.repository.ClientRepository;
 import com.login.Login.repository.CredentialsRepository;
 import com.login.Login.security.JwtUtil;
 import com.login.Login.service.otp.OtpEntry;
 import com.login.Login.service.otp.OtpService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +35,7 @@ public class CredentialsService {
 
     // Add new credential
     public Response<CredentialsResponse> addCredential(CredentialsRequest request) {
-        jwtUtil.ensureAdminFromContext();
+        jwtUtil.ensureAdminFromContext(); // Only admin can create credentials
         Long clientId = request.getClientId();
         Clients client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + clientId));
@@ -58,26 +61,36 @@ public class CredentialsService {
     }
 
     // List all credentials (password hidden)
-    public Response<List<CredentialsResponse>> listCredentials() {
-        jwtUtil.ensureAdminFromContext();
-        List<CredentialsResponse> list = credentialsRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Response<Page<CredentialsResponse>> listCredentials(String keyword, int page, int size) {
+        User user = jwtUtil.getAuthenticatedUserFromContext();
 
-        return Response.<List<CredentialsResponse>>builder()
-                .data(list)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("platformName").ascending());
+
+        Page<Credentials> credentialsPage;
+
+        if (jwtUtil.isAdminFromContext()){
+            credentialsPage = credentialsRepository.searchAllCredentials(keyword != null ? keyword : "", pageable);
+        }else{
+            credentialsPage = credentialsRepository.searchAssignedCredentials(user, keyword != null ? keyword : "", pageable);
+        }
+
+        Page<CredentialsResponse> response = credentialsPage.map(this::toResponse);
+
+
+        return Response.<Page<CredentialsResponse>>builder()
+                .data(response)
                 .httpStatusCode(HttpStatus.OK.value())
-                .message("Credentials fetched successfully (password hidden)")
+                .message("Credentials fetched successfully")
                 .build();
     }
 
     // Update credential
     @Transactional
     public Response<CredentialsResponse> updateCredential(Long id, CredentialsRequest request) {
-        jwtUtil.ensureAdminFromContext();
         Credentials credential = credentialsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + id));
+
+        ensureAccess(credential); // Check if current user can update
 
         if (request.getEmail() != null) credential.setEmail(request.getEmail());
         if (request.getPassword() != null) credential.setPassword(request.getPassword());
@@ -98,9 +111,10 @@ public class CredentialsService {
 
     // Toggle active/inactive
     public Response<CredentialsResponse> toggleActive(Long id) {
-        jwtUtil.ensureAdminFromContext();
         Credentials credential = credentialsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + id));
+
+        ensureAccess(credential); // Check if current user can toggle
 
         credential.setActive(!credential.getActive());
         Credentials updated = credentialsRepository.save(credential);
@@ -116,14 +130,12 @@ public class CredentialsService {
 
     // Generate OTP for password reveal
     public Response<Map<String,Object>> generateOtpForPassword(Long credentialId) {
-        jwtUtil.ensureAdminFromContext();
         Credentials credential = credentialsRepository.findById(credentialId)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
 
-        var otpResponse = otpService.generateOtp(credential.getEmail());
-        System.out.println("Generated OTP for " + credential.getEmail()+ ": " + otpResponse.getOtp());
-        System.out.println("RefId: " + otpResponse.getRefId());
+        ensureAccess(credential); // Only admin/assigned user can generate OTP
 
+        var otpResponse = otpService.generateOtp(credential.getEmail());
         Map<String, Object> result = new HashMap<>();
         result.put("refId", otpResponse.getRefId());
 
@@ -134,13 +146,10 @@ public class CredentialsService {
                 .build();
     }
 
+    // Reveal password
     public Response<CredentialRevealResponse> revealPassword(String refId, String otp) {
-        jwtUtil.ensureAdminFromContext();
-
-        // Fetch OTP entry
         OtpEntry otpEntry = otpService.getOtpEntry(refId);
 
-        // Check if OTP entry exists
         if (otpEntry == null || otpEntry.isExpired()) {
             return Response.<CredentialRevealResponse>builder()
                     .data(null)
@@ -149,7 +158,6 @@ public class CredentialsService {
                     .build();
         }
 
-        // Verify the provided OTP
         boolean valid = otpService.verifyOtp(refId, otp);
         if (!valid) {
             return Response.<CredentialRevealResponse>builder()
@@ -160,12 +168,12 @@ public class CredentialsService {
         }
 
         String email = otpEntry.getEmail();
-
-        // Fetch credential by email
         Credentials credential = credentialsRepository.findAll().stream()
                 .filter(c -> c.getEmail().equals(email))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Credential not found for email: " + email));
+
+        ensureAccess(credential); // Only admin/assigned user can reveal password
 
         CredentialRevealResponse response = CredentialRevealResponse.builder()
                 .credentialId(credential.getId())
@@ -177,6 +185,18 @@ public class CredentialsService {
                 .httpStatusCode(HttpStatus.OK.value())
                 .message("Password revealed successfully")
                 .build();
+    }
+
+    private void ensureAccess(Credentials credential) {
+        boolean isAdmin = jwtUtil.isAdminFromContext(); // implement in JwtUtil
+        Long currentUserId = jwtUtil.getUserIdFromContext(); // implement in JwtUtil
+
+        if (isAdmin) return; // admin has full access
+
+        if (credential.getClients().getAssignedUser() == null ||
+                !credential.getClients().getAssignedUser().getId().equals(currentUserId)) {
+            throw new RuntimeException("Access denied: Not allowed to view or modify this credential");
+        }
     }
 
 

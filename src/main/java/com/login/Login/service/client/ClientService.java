@@ -12,11 +12,12 @@ import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -67,15 +68,28 @@ public class ClientService {
     }
 
     // List all clients
-    public Response<List<ClientResponse>> listClients() {
-        jwtUtil.ensureAdminFromContext();
-        List<ClientResponse> clients = clientRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Response<Page<ClientResponse>> listClients(String keyword, int page, int size) {
+        User currentUser = jwtUtil.getAuthenticatedUserFromContext();
+        boolean isAdmin = jwtUtil.isAdminFromContext();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Clients> pageResult;
+        String searchTerm = (keyword == null || keyword.trim().isEmpty()) ? "" : keyword.trim();
 
-        return Response.<List<ClientResponse>>builder()
-                .data(clients)
+        if (isAdmin) {
+            // Admin can view all clients
+            if (searchTerm.isEmpty()) {
+                pageResult = clientRepository.findAll(pageable);
+            } else {
+                pageResult = clientRepository.searchByNameOrEmail(searchTerm, pageable);
+            }
+        } else {
+            // User can view only assigned clients
+            pageResult = clientRepository.searchAssignedClients(currentUser, searchTerm, pageable);
+        }
+        Page<ClientResponse> responsePage = pageResult.map(this::toResponse);
+
+        return Response.<Page<ClientResponse>>builder()
+                .data(responsePage)
                 .httpStatusCode(HttpStatus.OK.value())
                 .message("Client list fetched successfully")
                 .build();
@@ -152,6 +166,18 @@ public class ClientService {
         Clients clients = clientRepo.findById(request.getClientId())
                 .orElseThrow(() -> new RuntimeException("Client not found"));
 
+        if (request.getUserId() == null) {
+            // Unassign user
+            clients.setAssignedUser(null);
+            clientRepo.save(clients);
+            return Response.<String>builder()
+                    .data(null)
+                    .httpStatusCode(200)
+                    .message("User unassigned from client " + clients.getName())
+                    .build();
+        }
+
+        // Assign user
         User user = userRepo.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

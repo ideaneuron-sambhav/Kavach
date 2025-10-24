@@ -26,8 +26,10 @@ public class UserController {
 
     // List all users with active status
     @GetMapping("/list")
-    public ResponseEntity<Response<?>> listUsers() {
-        return ResponseEntity.ok(userService.listUsers());
+    public ResponseEntity<Response<?>> listUsers(@RequestParam(defaultValue = "") String search,
+                                                 @RequestParam(defaultValue = "0") int page,
+                                                 @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.listUsers(search, page, size));
 
     }
 }

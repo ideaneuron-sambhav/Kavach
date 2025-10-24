@@ -7,6 +7,7 @@ import com.login.Login.dto.clients.ClientResponse;
 import com.login.Login.service.client.ClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +29,10 @@ public class ClientController {
 
     // List all clients
     @GetMapping("/list")
-    public ResponseEntity<Response<List<ClientResponse>>> listClients() {
-        return ResponseEntity.ok(clientService.listClients());
+    public ResponseEntity<Response<Page<ClientResponse>>> listClients(@RequestParam(defaultValue = "") String search,
+                                                                      @RequestParam(defaultValue = "0") int page,
+                                                                      @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(clientService.listClients(search, page, size));
     }
 
     // Update client data

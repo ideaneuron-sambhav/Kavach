@@ -8,6 +8,7 @@ import com.login.Login.dto.otp.OtpVerifyRequest;
 import com.login.Login.service.credentials.CredentialsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +34,10 @@ public class CredentialsController {
 
     // List all credentials (password hidden)
     @GetMapping("/list")
-    public ResponseEntity<Response<List<CredentialsResponse>>> listCredentials() {
-        return ResponseEntity.ok(credentialsService.listCredentials());
+    public ResponseEntity<Response<Page<CredentialsResponse>>> listCredentials(@RequestParam(defaultValue = "") String search,
+                                                                               @RequestParam(defaultValue = "0") int page,
+                                                                               @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(credentialsService.listCredentials(search, page, size));
     }
 
     // Update credential

@@ -11,6 +11,10 @@ import com.login.Login.security.JwtUtil;
 import com.login.Login.repository.PermissionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,13 +31,18 @@ public class PermissionService {
 
 
     // List all permissions
-    public Response<List<Permission>> list() {
+    public Response<Page<Permission>> list(String keyword, int page, int size) {
         jwtUtil.getAuthenticatedUserFromContext();
-        List<Permission> permissions = permissionRepo.findAll();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("permissionType").ascending());
+        Page<Permission> permissionsPage;
+        if(keyword != null && !keyword.isBlank()){
+            permissionsPage = permissionRepo.searchRoles(keyword, pageable);
+        }else{
+            permissionsPage = permissionRepo.findAll(pageable);
+        }
 
-
-        return Response.<List<Permission>>builder()
-                .data(permissions)
+        return Response.<Page<Permission>>builder()
+                .data(permissionsPage)
                 .httpStatusCode(200)
                 .message("List of all permissions")
                 .build();

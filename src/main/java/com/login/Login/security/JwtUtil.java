@@ -129,6 +129,16 @@ public class JwtUtil {
             throw new RuntimeException("Access denied: Admin privileges required");
         }
     }
+    public boolean isAdminFromContext() {
+        User user = getAuthenticatedUserFromContext();
+        return user.getRole() != null && "ADMIN".equalsIgnoreCase(user.getRole().getName());
+    }
+
+    public Long getUserIdFromContext() {
+        User user = getAuthenticatedUserFromContext();
+        return user.getId();
+    }
+
 
 
     private String stripBearer(String token) {
