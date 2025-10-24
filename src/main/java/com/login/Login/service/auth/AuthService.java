@@ -62,16 +62,14 @@ public class AuthService {
         // Generate OTP using refId
         OtpResponse otpResponse = otpService.generateOtp(user.getEmail());
 
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("refId", otpResponse.getRefId());
-        responseData.put("otp",otpResponse.getOtp());
+
 
         // optional for debugging
         System.out.println("Generated OTP for " + user.getEmail() + ": " + otpResponse.getOtp());
         System.out.println("RefId: " + otpResponse.getRefId());
 
-        return Response.<Map<String, String>>builder()
-                .data(responseData)
+        return Response.<String>builder()
+                .data(otpResponse.getRefId())
                 .httpStatusCode(200)
                 .message("OTP generated successfully.")
                 .build();

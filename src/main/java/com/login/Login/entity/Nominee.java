@@ -33,6 +33,7 @@ public class Nominee {
     private String relation;
 
     @Convert(converter = AesAttributeConverter.class)
+    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid mobile number")
     @Column(nullable = false)
     private String mobileNumber;
 

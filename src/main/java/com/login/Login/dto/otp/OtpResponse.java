@@ -1,6 +1,5 @@
 package com.login.Login.dto.otp;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 

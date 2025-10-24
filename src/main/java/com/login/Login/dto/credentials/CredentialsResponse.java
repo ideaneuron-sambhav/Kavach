@@ -1,5 +1,6 @@
-package com.login.Login.dto.platform;
+package com.login.Login.dto.credentials;
 
+import com.login.Login.entity.Clients;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,10 +10,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PlatformResponse {
-
+public class CredentialsResponse {
     private Long id;
-    private String name;
+    private Clients clients;
+    private String email;
+    private String mobileNumber;
+    private String platformName;
     private Boolean twoFA;
     private List<String> twoFATypes;
     private Boolean active;
