@@ -49,6 +49,12 @@ public class Credentials {
     @Column(nullable = false)
     private String platformName;
 
+    @Column(name = "masked_email")
+    private String maskedEmail;
+
+    @Column(name = "masked_mobile_number")
+    private String maskedMobileNumber;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false, columnDefinition = "timestamp(6) without time zone")
     private LocalDateTime createdAt;
@@ -70,6 +76,21 @@ public class Credentials {
 
     @PrePersist
     @PreUpdate
+    private void preSave() {
+        maskSensitiveData();
+        validateTwoFATypes();
+    }
+
+    private void maskSensitiveData() {
+        if (this.email != null && !this.email.isEmpty()) {
+            this.maskedEmail = this.email.substring(0, Math.min(4, this.email.length()));
+        }
+        if (this.mobileNumber != null && !this.mobileNumber.isEmpty()) {
+            this.maskedMobileNumber = this.mobileNumber.substring(0, Math.min(4, this.mobileNumber.length()));
+        }
+    }
+
+
     private void validateTwoFATypes() {
         if (Boolean.TRUE.equals(this.twoFA)) {
             if (twoFATypes == null || twoFATypes.isEmpty()) {

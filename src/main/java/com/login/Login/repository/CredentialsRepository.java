@@ -15,6 +15,24 @@ import java.util.List;
 public interface CredentialsRepository extends JpaRepository<Credentials, Long> {
     List<Credentials> findAllByClientsId(Long clientsId);
 
+    @Query("""
+    SELECT c FROM Credentials c
+    WHERE LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    """)
+    Page<Credentials> searchByMaskedForAdmin(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+    SELECT c FROM Credentials c
+    WHERE c.clients.assignedUser = :user
+    AND (LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    """)
+    Page<Credentials> searchByMaskedForUser(@Param("user") User user,
+                                            @Param("keyword") String keyword,
+                                            Pageable pageable);
+
+
     @Query("SELECT cr FROM Credentials cr " +
             "WHERE LOWER(cr.platformName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "   OR LOWER(cr.clients.email) LIKE LOWER(CONCAT('%', :keyword, '%'))")

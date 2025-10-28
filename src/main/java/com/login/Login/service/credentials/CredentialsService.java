@@ -68,14 +68,15 @@ public class CredentialsService {
 
         Page<Credentials> credentialsPage;
 
-        if (jwtUtil.isAdminFromContext()){
-            credentialsPage = credentialsRepository.searchAllCredentials(keyword != null ? keyword : "", pageable);
-        }else{
-            credentialsPage = credentialsRepository.searchAssignedCredentials(user, keyword != null ? keyword : "", pageable);
+        String searchKeyword = (keyword != null) ? keyword : "";
+
+        if (jwtUtil.isAdminFromContext()) {
+            credentialsPage = credentialsRepository.searchByMaskedForAdmin(searchKeyword, pageable);
+        } else {
+            credentialsPage = credentialsRepository.searchByMaskedForUser(user, searchKeyword, pageable);
         }
 
         Page<CredentialsResponse> response = credentialsPage.map(this::toResponse);
-
 
         return Response.<Page<CredentialsResponse>>builder()
                 .data(response)
