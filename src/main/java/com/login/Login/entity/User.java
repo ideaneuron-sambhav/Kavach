@@ -35,6 +35,8 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(name = "masked_email")
+    private String maskedEmail;
 
     @Column(nullable = false)
     private String password;
@@ -53,6 +55,13 @@ public class User {
             return role.getPermissionIds();
         }
         return List.of();
+    }
+    @PrePersist
+    @PreUpdate
+    private void maskSensitiveData() {
+        if (this.email != null && !this.email.isEmpty()) {
+            this.maskedEmail = this.email.substring(0, Math.min(4, this.email.length()));
+        }
     }
 
     public User(String firstName, String lastName, String email, String password, Role role) {
