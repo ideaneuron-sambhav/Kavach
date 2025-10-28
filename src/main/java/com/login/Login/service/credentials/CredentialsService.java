@@ -86,7 +86,25 @@ public class CredentialsService {
 
     // Update credential
     @Transactional
-    public Response<CredentialsResponse> updateCredential(Long id, CredentialsRequest request) {
+    public Response<CredentialsResponse> updateCredential(Long id, CredentialsRequest request, String refId, String otp) {
+        OtpEntry otpEntry = otpService.getOtpEntry(refId);
+
+        if (otpEntry == null || otpEntry.isExpired()) {
+            return Response.<CredentialsResponse>builder()
+                    .data(null)
+                    .httpStatusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message("Invalid or expired OTP")
+                    .build();
+        }
+
+        boolean valid = otpService.verifyOtp(refId, otp);
+        if (!valid) {
+            return Response.<CredentialsResponse>builder()
+                    .data(null)
+                    .httpStatusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message("Invalid OTP")
+                    .build();
+        }
         Credentials credential = credentialsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + id));
 
@@ -127,6 +145,24 @@ public class CredentialsService {
                 .message("Credential " + status + " successfully")
                 .build();
     }
+    // Generate OTP for password reveal
+    public Response<Map<String,Object>> generateOtpForUpdate(Long credentialId) {
+        Credentials credential = credentialsRepository.findById(credentialId)
+                .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
+
+        ensureAccess(credential); // Only admin/assigned user can generate OTP
+
+        var otpResponse = otpService.generateOtp(credential.getEmail());
+        Map<String, Object> result = new HashMap<>();
+        result.put("refId", otpResponse.getRefId());
+        System.out.print("The OTP for the updation is: "+otpResponse.getOtp());
+
+        return Response.<Map<String,Object>>builder()
+                .data(result)
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("OTP generated successfully for credential ID: " + credentialId)
+                .build();
+    }
 
     // Generate OTP for password reveal
     public Response<Map<String,Object>> generateOtpForPassword(Long credentialId) {
@@ -138,6 +174,7 @@ public class CredentialsService {
         var otpResponse = otpService.generateOtp(credential.getEmail());
         Map<String, Object> result = new HashMap<>();
         result.put("refId", otpResponse.getRefId());
+        System.out.print("The OTP for the password is: "+otpResponse.getOtp());
 
         return Response.<Map<String,Object>>builder()
                 .data(result)

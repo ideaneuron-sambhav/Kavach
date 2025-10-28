@@ -9,5 +9,5 @@ import lombok.*;
 @Builder
 public class CredentialRevealResponse {
     private Long credentialId;
-    private String password; // plaintext password (only returned after OTP verification)
+    private String password;
 }

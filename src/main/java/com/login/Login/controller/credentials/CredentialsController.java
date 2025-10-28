@@ -4,6 +4,7 @@ import com.login.Login.dto.Response;
 import com.login.Login.dto.credentials.CredentialsRequest;
 import com.login.Login.dto.credentials.CredentialsResponse;
 import com.login.Login.dto.credentials.CredentialRevealResponse;
+import com.login.Login.dto.credentials.UpdateCredentialsRequest;
 import com.login.Login.dto.otp.OtpVerifyRequest;
 import com.login.Login.service.credentials.CredentialsService;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +45,10 @@ public class CredentialsController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Response<CredentialsResponse>> updateCredential(
             @PathVariable Long id,  //CredentialsId
-            @RequestBody CredentialsRequest request) {
-        return ResponseEntity.ok(credentialsService.updateCredential(id, request));
+            @RequestBody UpdateCredentialsRequest updateCredentialsRequest) {
+        CredentialsRequest request = updateCredentialsRequest.getCredentialsRequest();
+        OtpVerifyRequest otpVerifyRequest = updateCredentialsRequest.getOtpVerifyRequest();
+        return ResponseEntity.ok(credentialsService.updateCredential(id, request, otpVerifyRequest.getRefId(), otpVerifyRequest.getOtp()));
     }
 
     // Toggle active/inactive
@@ -55,13 +58,17 @@ public class CredentialsController {
     }
 
     // Generate OTP for password reveal
-    @PostMapping("/otp/generate/{id}")
-    public ResponseEntity<Response<Map<String,Object>>> generateOtp(@PathVariable Long id) {
+    @PostMapping("/otp/generate/password/{id}")
+    public ResponseEntity<Response<Map<String,Object>>> generateOtpForPassword(@PathVariable Long id) {
         return ResponseEntity.ok(credentialsService.generateOtpForPassword(id));
+    }
+    @PostMapping("/otp/generate/update/{id}")
+    public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdate(@PathVariable Long id) {
+        return ResponseEntity.ok(credentialsService.generateOtpForUpdate(id));
     }
 
     // Reveal password using refId only
-    @PostMapping("/verify-otp")
+    @PostMapping("/otp/verify/password")
     public ResponseEntity<Response<CredentialRevealResponse>> revealPassword(@RequestBody OtpVerifyRequest request) {
         return ResponseEntity.ok(credentialsService.revealPassword(request.getRefId(),request.getOtp()));
     }

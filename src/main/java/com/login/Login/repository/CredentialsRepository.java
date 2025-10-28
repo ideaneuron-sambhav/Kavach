@@ -2,9 +2,11 @@ package com.login.Login.repository;
 
 import com.login.Login.entity.Credentials;
 import com.login.Login.entity.User;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -27,4 +29,14 @@ public interface CredentialsRepository extends JpaRepository<Credentials, Long> 
     Page<Credentials> searchAssignedCredentials(@Param("user") User user,
                                                 @Param("keyword") String keyword,
                                                 Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Credentials c SET c.active = false WHERE c.clients.id = :clientId")
+    void deactivateAllByClientId(@Param("clientId") Long clientId);
+    @Modifying
+    @Transactional
+    @Query("UPDATE Credentials c SET c.active = true WHERE c.clients.id = :clientId")
+    void activateAllByClientId(@Param("clientId") Long clientId);
+
 }

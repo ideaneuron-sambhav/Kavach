@@ -2,11 +2,15 @@ package com.login.Login.controller.permission;
 
 import com.login.Login.dto.Response;
 import com.login.Login.dto.permission.PermissionRequest;
+import com.login.Login.entity.Permission;
 import com.login.Login.service.permission.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/permission")
@@ -34,10 +38,8 @@ public class PermissionController {
 
     // List all permissions
     @GetMapping("/list")
-    public Response<?> listPermissions(@RequestParam(defaultValue = "") String search,
-                                       @RequestParam(defaultValue = "0") int page,
-                                       @RequestParam(defaultValue = "10") int size) {
-        return permissionService.list(search, page, size);
+    public Response<List<Permission>> listPermissions() {
+        return permissionService.list();
     }
 
     // List permissions by role (case-insensitive)

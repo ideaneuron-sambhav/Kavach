@@ -8,10 +8,13 @@ import com.login.Login.entity.Clients;
 import com.login.Login.entity.Nominee;
 import com.login.Login.entity.User;
 import com.login.Login.repository.ClientRepository;
+import com.login.Login.repository.CredentialsRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
+import com.login.Login.service.credentials.CredentialsService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -26,6 +29,7 @@ public class ClientService {
     private final UserRepository userRepo;
     private final JwtUtil jwtUtil;
     private final ClientRepository clientRepository;
+    private final CredentialsRepository credentialsRepository;
 
     // Add new client
     public Response<ClientResponse> addClient(ClientRequest request) {
@@ -149,6 +153,13 @@ public class ClientService {
 
         client.setActive(!client.getActive());
         Clients updated = clientRepository.save(client);
+        if (client.getActive()) {
+            credentialsRepository.activateAllByClientId(updated.getId());
+        } else {
+            credentialsRepository.deactivateAllByClientId(updated.getId());
+        }
+
+
 
         String status = updated.getActive() ? "activated" : "deactivated";
 

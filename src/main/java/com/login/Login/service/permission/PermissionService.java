@@ -31,18 +31,12 @@ public class PermissionService {
 
 
     // List all permissions
-    public Response<Page<Permission>> list(String keyword, int page, int size) {
+    public Response<List<Permission>> list() {
         jwtUtil.getAuthenticatedUserFromContext();
-        Pageable pageable = PageRequest.of(page, size, Sort.by("permissionType").ascending());
-        Page<Permission> permissionsPage;
-        if(keyword != null && !keyword.isBlank()){
-            permissionsPage = permissionRepo.searchRoles(keyword, pageable);
-        }else{
-            permissionsPage = permissionRepo.findAll(pageable);
-        }
+        List<Permission> list = permissionRepo.findAll();
 
-        return Response.<Page<Permission>>builder()
-                .data(permissionsPage)
+        return Response.<List<Permission>>builder()
+                .data(list)
                 .httpStatusCode(200)
                 .message("List of all permissions")
                 .build();

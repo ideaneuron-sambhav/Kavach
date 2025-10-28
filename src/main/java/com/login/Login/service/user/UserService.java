@@ -31,7 +31,7 @@ public class UserService {
     @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public Response<Page<User>> listUsers(String keyword, int page, int size) {
+    public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
         jwtUtil.getAuthenticatedUserFromContext();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").descending());
@@ -41,9 +41,19 @@ public class UserService {
         } else {
             usersPage = userRepo.findAll(pageable);
         }
+        Page<UserResponse> userResponses = usersPage.map(user -> UserResponse.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getName())
+                .active(user.getActive())
+                .permissionIds(user.getPermissions())
+                .build()
+        );
 
-        return Response.<Page<User>>builder()
-                .data(usersPage)
+        return Response.<Page<UserResponse>>builder()
+                .data(userResponses)
                 .httpStatusCode(200)
                 .message("List of all users")
                 .build();
