@@ -1,7 +1,6 @@
 package com.login.Login.controller.client;
 
 import com.login.Login.dto.Response;
-import com.login.Login.dto.clients.AssignClientRequest;
 import com.login.Login.dto.clients.ClientRequest;
 import com.login.Login.dto.clients.ClientResponse;
 import com.login.Login.service.client.ClientService;
@@ -44,8 +43,11 @@ public class ClientController {
 
     // Assign a Client to Specific User using User_ID and Client_ID
     @PostMapping("/assign")
-    public Response<?> assignClient(@RequestBody AssignClientRequest request) {
-        return clientService.assignClientToUser(request);
+    public Response<?> assignClient(@RequestParam Long clientId,
+                                    @RequestParam Long userId) throws Exception {
+        if(clientId == null) throw new Exception("Client Id cannot be null");
+        if(userId == null) throw new Exception("User Id cannot be null");
+        return clientService.assignClientToUser(clientId, userId);
     }
 
 

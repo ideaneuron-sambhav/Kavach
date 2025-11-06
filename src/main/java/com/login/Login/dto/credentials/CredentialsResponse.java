@@ -13,8 +13,8 @@ import java.util.List;
 public class CredentialsResponse {
     private Long id;
     private Clients clients;
-    private String email;
-    private String mobileNumber;
+    private String maskedEmail;
+    private String maskedMobileNumber;
     private String platformName;
     private Boolean twoFA;
     private List<String> twoFATypes;

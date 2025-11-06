@@ -27,6 +27,7 @@ public class GenerateAndStoreKey {
         System.out.println("AES_FIXED_IV (Base64): " + base64Iv);
 
         System.out.println("\n--- Add these to your environment or application.properties ---");
+        System.out.println("APP_ACTIVE_KEY_ID=" + "v1");
         System.out.println("APP_KEYS_v1=" + base64Key);
         System.out.println("AES_FIXED_IV=" + base64Iv);
     }

@@ -7,7 +7,9 @@ import lombok.*;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -47,7 +49,8 @@ public class Clients {
     private String address;
 
     @ManyToOne
-    @JoinColumn(name = "assigned_user_id")
+    @JoinColumn(name = "assigned_user_id") //, columnDefinition = "integer[]"
+    @JdbcTypeCode(SqlTypes.ARRAY)
     private User assignedUser;
 
     @Convert(converter = AesAttributeConverter.class)

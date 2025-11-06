@@ -66,12 +66,48 @@ public class OtpService {
             }
         }
 
+
         // Create new OTP
         String refId = java.util.UUID.randomUUID().toString();
         String otp = generateRandomOtp();
         OtpEntry entry = new OtpEntry(email, otp, TimeUnit.MINUTES.toMillis(OTP_EXPIRATION_MINUTES));
         otpCache.put(refId, entry);
         emailToRefId.put(email, refId);
+        long remainingTime = getRemainingOtpTime(refId);
+        return new OtpResponse(refId, otp);
+    }
+
+    /** Generate OTP and return refId */
+    public OtpResponse generateOtpUsingId(Long id) {
+        String existingRefId = emailToRefId.getIfPresent(id);
+        if (existingRefId != null) {
+            OtpEntry existingEntry = otpCache.getIfPresent(existingRefId);
+
+            if (existingEntry != null) {
+                // Check if max regenerations reached
+                if (existingEntry.getRegenerations() >= MAX_OTP_REGENERATIONS) {
+                    long cooldownRemaining = getRemainingCooldownTime(existingEntry);
+                    throw new RuntimeException(
+                            "Maximum OTP regenerations reached. Try after " + cooldownRemaining + " seconds"
+                    );
+                }
+
+                // Increment regenerations and reset OTP + time
+                existingEntry.incrementRegenerations();
+                existingEntry.resetOtp(generateRandomOtp(), TimeUnit.MINUTES.toMillis(OTP_EXPIRATION_MINUTES));
+
+                long remainingTime = getRemainingOtpTime(existingRefId);
+                return new OtpResponse(existingRefId, existingEntry.getOtp());
+            }
+        }
+
+
+        // Create new OTP
+        String refId = java.util.UUID.randomUUID().toString();
+        String otp = generateRandomOtp();
+        OtpEntry entry = new OtpEntry(String.valueOf(id), otp, TimeUnit.MINUTES.toMillis(OTP_EXPIRATION_MINUTES));
+        otpCache.put(refId, entry);
+        emailToRefId.put(String.valueOf(id), refId);
         long remainingTime = getRemainingOtpTime(refId);
         return new OtpResponse(refId, otp);
     }

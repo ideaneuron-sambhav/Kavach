@@ -1,4 +1,5 @@
 package com.login.Login.dto.user;
+import com.login.Login.entity.Role;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -33,4 +34,12 @@ public class UserRequest {
     @NotNull(message = "Role Cannot be empty")
     @Column(nullable = false)
     private String role;
+
+    public UserRequest(String firstName, String lastName, String email, String password, String role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
 }

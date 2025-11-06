@@ -11,7 +11,6 @@ import com.login.Login.repository.ClientRepository;
 import com.login.Login.repository.CredentialsRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
-import com.login.Login.service.credentials.CredentialsService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +24,16 @@ import org.springframework.data.domain.Pageable;
 @Service
 @RequiredArgsConstructor
 public class ClientService {
-    private final ClientRepository clientRepo;
-    private final UserRepository userRepo;
-    private final JwtUtil jwtUtil;
-    private final ClientRepository clientRepository;
-    private final CredentialsRepository credentialsRepository;
+    @Autowired
+    ClientRepository clientRepo;
+    @Autowired
+    UserRepository userRepo;
+    @Autowired
+    JwtUtil jwtUtil;
+    @Autowired
+    ClientRepository clientRepository;
+    @Autowired
+    CredentialsRepository credentialsRepository;
 
     // Add new client
     public Response<ClientResponse> addClient(ClientRequest request) {
@@ -170,14 +174,14 @@ public class ClientService {
                 .build();
     }
     @Transactional
-    public Response<String> assignClientToUser(AssignClientRequest request) {
+    public Response<String> assignClientToUser(Long clientId, Long userId) throws Exception {
         // Only admin can assign
         jwtUtil.ensureAdminFromContext();
 
-        Clients clients = clientRepo.findById(request.getClientId())
+        Clients clients = clientRepo.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
 
-        if (request.getUserId() == null) {
+        if (userId == null) {
             // Unassign user
             clients.setAssignedUser(null);
             clientRepo.save(clients);
@@ -189,9 +193,11 @@ public class ClientService {
         }
 
         // Assign user
-        User user = userRepo.findById(request.getUserId())
+        User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
+        if(user.getRole().getName().equalsIgnoreCase("admin")){
+            throw new Exception("Client cannot be assigned to ADMIN!");
+        }
         clients.setAssignedUser(user);
         clientRepo.save(clients);
 
@@ -218,7 +224,8 @@ public class ClientService {
         if (client.getAssignedUser() != null) {
             userResponse= UserResponse.builder()
                     .id(client.getAssignedUser().getId())
-                    .email(client.getAssignedUser().getEmail())
+                    .firstName(client.getAssignedUser().getFirstName())
+                    .lastName(client.getAssignedUser().getLastName())
                     .active(client.getAssignedUser().getActive())
                     .build();
         }

@@ -39,7 +39,9 @@ public class CredentialsService {
         Long clientId = request.getClientId();
         Clients client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + clientId));
-
+        if(!client.getActive()){
+            throw new RuntimeException("Client is inactive: "+client.getName());
+        }
         Credentials credential = Credentials.builder()
                 .clients(client)
                 .email(request.getEmail())
@@ -112,7 +114,6 @@ public class CredentialsService {
         ensureAccess(credential); // Check if current user can update
 
         if (request.getEmail() != null) credential.setEmail(request.getEmail());
-        if (request.getPassword() != null) credential.setPassword(request.getPassword());
         if (request.getMobileNumber() != null) credential.setMobileNumber(request.getMobileNumber());
         if (request.getPlatformName() != null) credential.setPlatformName(request.getPlatformName());
         if (request.getTwoFA() != null) credential.setTwoFA(request.getTwoFA());
@@ -128,13 +129,53 @@ public class CredentialsService {
                 .build();
     }
 
+    // Update credential
+    @Transactional
+    public Response<CredentialsResponse> updatePassword(Long id, CredentialsRequest request, String refId, String otp) {
+        OtpEntry otpEntry = otpService.getOtpEntry(refId);
+
+        if (otpEntry == null || otpEntry.isExpired()) {
+            return Response.<CredentialsResponse>builder()
+                    .data(null)
+                    .httpStatusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message("Invalid or expired OTP")
+                    .build();
+        }
+
+        boolean valid = otpService.verifyOtp(refId, otp);
+        if (!valid) {
+            return Response.<CredentialsResponse>builder()
+                    .data(null)
+                    .httpStatusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message("Invalid OTP")
+                    .build();
+        }
+        Credentials credential = credentialsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + id));
+
+        ensureAccess(credential); // Check if current user can update
+
+        if (request.getPassword() != null) credential.setPassword(request.getPassword());
+
+        Credentials updated = credentialsRepository.save(credential);
+
+        return Response.<CredentialsResponse>builder()
+                .data(toResponse(updated))
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("Password updated successfully")
+                .build();
+    }
+
     // Toggle active/inactive
     public Response<CredentialsResponse> toggleActive(Long id) {
         Credentials credential = credentialsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + id));
 
         ensureAccess(credential); // Check if current user can toggle
-
+        Clients clients = credential.getClients();
+        if(!clients.getActive()){
+            throw new RuntimeException("Client is inactive: " + clients.getName());
+        }
         credential.setActive(!credential.getActive());
         Credentials updated = credentialsRepository.save(credential);
 
@@ -146,17 +187,39 @@ public class CredentialsService {
                 .message("Credential " + status + " successfully")
                 .build();
     }
-    // Generate OTP for password reveal
+    // Generate OTP for Update Details
     public Response<Map<String,Object>> generateOtpForUpdate(Long credentialId) {
         Credentials credential = credentialsRepository.findById(credentialId)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
 
         ensureAccess(credential); // Only admin/assigned user can generate OTP
-
-        var otpResponse = otpService.generateOtp(credential.getEmail());
+        if(!credential.getActive()){
+            throw new RuntimeException("Credential must be active!!!");
+        }
+        var otpResponse = otpService.generateOtpUsingId(credentialId);
         Map<String, Object> result = new HashMap<>();
         result.put("refId", otpResponse.getRefId());
-        System.out.print("The OTP for the updation is: "+otpResponse.getOtp());
+        System.out.println("The OTP for the updating details is: "+otpResponse.getOtp());
+
+        return Response.<Map<String,Object>>builder()
+                .data(result)
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("OTP generated successfully for credential ID: " + credentialId)
+                .build();
+    }
+    // Generate OTP for Update Password
+    public Response<Map<String,Object>> generateOtpForUpdatePassword(Long credentialId) {
+        Credentials credential = credentialsRepository.findById(credentialId)
+                .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
+
+        ensureAccess(credential); // Only admin/assigned user can generate OTP
+        if(!credential.getActive()){
+            throw new RuntimeException("Credential must be active!!!");
+        }
+        var otpResponse = otpService.generateOtpUsingId(credentialId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("refId", otpResponse.getRefId());
+        System.out.println("The OTP for the updating password is: "+otpResponse.getOtp());
 
         return Response.<Map<String,Object>>builder()
                 .data(result)
@@ -167,15 +230,20 @@ public class CredentialsService {
 
     // Generate OTP for password reveal
     public Response<Map<String,Object>> generateOtpForPassword(Long credentialId) {
+        if(credentialId == null){
+            throw new RuntimeException("Id must be shared for generating OTP!!!");
+        }
         Credentials credential = credentialsRepository.findById(credentialId)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
 
         ensureAccess(credential); // Only admin/assigned user can generate OTP
-
-        var otpResponse = otpService.generateOtp(credential.getEmail());
+        if(!credential.getActive()){
+            throw new RuntimeException("Credential must be active!!!");
+        }
+        var otpResponse = otpService.generateOtpUsingId(credentialId);
         Map<String, Object> result = new HashMap<>();
         result.put("refId", otpResponse.getRefId());
-        System.out.print("The OTP for the password is: "+otpResponse.getOtp());
+        System.out.println("The OTP for the password is: "+otpResponse.getOtp());
 
         return Response.<Map<String,Object>>builder()
                 .data(result)
@@ -206,16 +274,17 @@ public class CredentialsService {
         }
 
         String email = otpEntry.getEmail();
-        Credentials credential = credentialsRepository.findAll().stream()
-                .filter(c -> c.getEmail().equals(email))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Credential not found for email: " + email));
+        Long id = Long.parseLong(email);
 
-        ensureAccess(credential); // Only admin/assigned user can reveal password
+        Credentials credentials = credentialsRepository.findById(id).orElse(null);
 
+
+        ensureAccess(credentials); // Only admin/assigned user can reveal password
+
+        assert credentials != null;
         CredentialRevealResponse response = CredentialRevealResponse.builder()
-                .credentialId(credential.getId())
-                .password(credential.getPassword())
+                .credentialId(credentials.getId())
+                .password(credentials.getPassword())
                 .build();
 
         return Response.<CredentialRevealResponse>builder()
@@ -244,8 +313,8 @@ public class CredentialsService {
         return CredentialsResponse.builder()
                 .id(credential.getId())
                 .clients(credential.getClients())
-                .email(credential.getEmail())
-                .mobileNumber(credential.getMobileNumber())
+                .maskedEmail(credential.getMaskedEmail())
+                .maskedMobileNumber(credential.getMaskedMobileNumber())
                 .platformName(credential.getPlatformName())
                 .twoFA(credential.getTwoFA())
                 .twoFATypes(credential.getTwoFATypes())

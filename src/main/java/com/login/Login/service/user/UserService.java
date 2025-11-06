@@ -3,11 +3,13 @@ package com.login.Login.service.user;
 import com.login.Login.dto.Response;
 import com.login.Login.dto.user.UserRequest;
 import com.login.Login.dto.user.UserResponse;
+import com.login.Login.entity.Folder;
 import com.login.Login.entity.Role;
 import com.login.Login.entity.User;
 import com.login.Login.repository.RoleRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
+import com.login.Login.service.folder.FolderService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +30,12 @@ public class UserService {
     private final UserRepository userRepo;
     private final JwtUtil jwtUtil;
     private final RoleRepository roleRepository;
+    private final FolderService folderService;
     @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
 
     public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
-        jwtUtil.getAuthenticatedUserFromContext();
+        jwtUtil.ensureAdminFromContext();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").descending());
         Page<User> usersPage;
@@ -107,6 +110,9 @@ public class UserService {
                     .active(true)
                     .build();
 
+            userRepo.save(user);
+            Folder folder = folderService.createUserRootFolder(user.getId());
+            user.setRootFolder(folder);
             userRepo.save(user);
 
             return Response.<UserResponse>builder()

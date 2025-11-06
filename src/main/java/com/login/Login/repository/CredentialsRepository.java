@@ -19,6 +19,7 @@ public interface CredentialsRepository extends JpaRepository<Credentials, Long> 
     SELECT c FROM Credentials c
     WHERE LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))
     OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%'))
     """)
     Page<Credentials> searchByMaskedForAdmin(@Param("keyword") String keyword, Pageable pageable);
 
@@ -26,7 +27,8 @@ public interface CredentialsRepository extends JpaRepository<Credentials, Long> 
     SELECT c FROM Credentials c
     WHERE c.clients.assignedUser = :user
     AND (LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))
-    OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%')))
     """)
     Page<Credentials> searchByMaskedForUser(@Param("user") User user,
                                             @Param("keyword") String keyword,

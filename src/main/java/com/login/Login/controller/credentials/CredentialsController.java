@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -51,6 +50,16 @@ public class CredentialsController {
         return ResponseEntity.ok(credentialsService.updateCredential(id, request, otpVerifyRequest.getRefId(), otpVerifyRequest.getOtp()));
     }
 
+    // Update credential password
+    @PutMapping("/update/password/{id}")
+    public ResponseEntity<Response<CredentialsResponse>> updateCredentialPassword(
+            @PathVariable Long id,  //CredentialsId
+            @RequestBody UpdateCredentialsRequest updateCredentialsRequest) {
+        CredentialsRequest request = updateCredentialsRequest.getCredentialsRequest();
+        OtpVerifyRequest otpVerifyRequest = updateCredentialsRequest.getOtpVerifyRequest();
+        return ResponseEntity.ok(credentialsService.updatePassword(id, request, otpVerifyRequest.getRefId(), otpVerifyRequest.getOtp()));
+    }
+
     // Toggle active/inactive
     @PutMapping("/toggle/{id}") //CredentialsId
     public ResponseEntity<Response<CredentialsResponse>> toggleActive(@PathVariable Long id) {
@@ -61,6 +70,10 @@ public class CredentialsController {
     @PostMapping("/otp/generate/password/{id}")
     public ResponseEntity<Response<Map<String,Object>>> generateOtpForPassword(@PathVariable Long id) {
         return ResponseEntity.ok(credentialsService.generateOtpForPassword(id));
+    }
+    @PostMapping("/otp/generate/update/password/{id}")
+    public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdatePassword(@PathVariable Long id) {
+        return ResponseEntity.ok(credentialsService.generateOtpForUpdatePassword(id));
     }
     @PostMapping("/otp/generate/update/{id}")
     public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdate(@PathVariable Long id) {

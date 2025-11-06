@@ -45,9 +45,11 @@ public class Credentials {
     @Column(nullable = false)
     private String mobileNumber;
 
-    @Convert(converter = AesAttributeConverter.class)
     @Column(nullable = false)
     private String platformName;
+
+    @Column(name = "search_email")
+    private String searchEmail;
 
     @Column(name = "masked_email")
     private String maskedEmail;
@@ -77,16 +79,17 @@ public class Credentials {
     @PrePersist
     @PreUpdate
     private void preSave() {
-        maskSensitiveData();
+        searchSensitiveData();
         validateTwoFATypes();
     }
 
-    private void maskSensitiveData() {
+    private void searchSensitiveData() {
         if (this.email != null && !this.email.isEmpty()) {
-            this.maskedEmail = this.email.substring(0, Math.min(4, this.email.length()));
+            this.searchEmail = this.email.substring(0, Math.min(4, this.email.length()));
+            this.maskedEmail = maskEmail(this.email);
         }
         if (this.mobileNumber != null && !this.mobileNumber.isEmpty()) {
-            this.maskedMobileNumber = this.mobileNumber.substring(0, Math.min(4, this.mobileNumber.length()));
+            this.maskedMobileNumber = maskMobile(this.mobileNumber);
         }
     }
 
@@ -101,5 +104,29 @@ public class Credentials {
                 twoFATypes.clear();
             }
         }
+    }
+    private String maskMobile(String mobile) {
+        if (mobile == null || mobile.length() <= 5) return mobile; // too short to mask
+
+        String firstDigit = mobile.substring(0, 1);
+        String lastFour = mobile.substring(mobile.length() - 4);
+        String maskedMiddle = "x".repeat(mobile.length() - 5);
+        return firstDigit + maskedMiddle + lastFour;
+    }
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return email;
+
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 2) return email; // too short to mask
+
+        String beforeAt = email.substring(0, atIndex);
+        String afterAt = email.substring(atIndex);
+
+        char first = beforeAt.charAt(0);
+        char last = beforeAt.charAt(beforeAt.length() - 1);
+
+        String maskedMiddle = "x".repeat(beforeAt.length() - 2);
+
+        return first + maskedMiddle + last + afterAt;
     }
 }
