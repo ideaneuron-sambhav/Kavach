@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -35,39 +36,45 @@ public class FileController {
 
     @PostMapping({"/**","/"})
     @Transactional
-    public Map<String, String> uploadFile(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws Exception {
-        User user = jwtUtil.getAuthenticatedUserFromContext();
-        String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
-        if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
-        if (!path.endsWith("/")) path += "/";
-        String fileName = file.getOriginalFilename();
-        assert fileName != null;
-        String encodedFilename = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-
-        System.out.println("Encoded filename: " + encodedFilename);
-        /*if(fileName != null && fileName.contains(" ")) throw new Exception("File Name is invalid!!!");*/
-        if(folderRepository.findByPathAndActiveTrue(path+fileName+"/").isPresent()){
-            throw new Exception("File Already exists with the same name");
-        }
-        Path rootLocation = Paths.get("Uploads");
-        Path uploadDir = Paths.get(rootLocation.toString(), path);
-        Path filePath = uploadDir.resolve(fileName);
-
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        Folder fileEntity = Folder.builder()
-                .name(fileName)
-                .type(Folder.FolderType.FILE)
-                .createdAt(LocalDateTime.now())
-                .active(true)
-                .user(user)
-                .path(path+fileName+"/")
-                .parent(folderRepository.findByPathAndActiveTrue(path).orElseThrow(()-> new RuntimeException("Path not found!!!"))).build();
-        folderRepository.save(fileEntity);
-
+    public Map<String, String> uploadFile(HttpServletRequest request, @RequestParam("file") List<MultipartFile> files) throws Exception {
         Map<String, String> response = new HashMap<>();
-        response.put("message", "File uploaded successfully");
-        response.put("fileName", fileName);
+        int i=1;
+        if(files.size()>10) throw new Exception("Only 10 files can be uploaded at a time!!!");
+        for(MultipartFile file: files) {
+            User user = jwtUtil.getAuthenticatedUserFromContext();
+            String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
+            if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
+            if (!path.endsWith("/")) path += "/";
+            String fileName = file.getOriginalFilename();
+            assert fileName != null;
+            String encodedFilename = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+            if(file.getSize()>=(10*1024*1024)) throw new Exception("File Size for the File :" + fileName+"exceeds the limit!");
+
+            System.out.println("Encoded filename: " + encodedFilename);
+            /*if(fileName != null && fileName.contains(" ")) throw new Exception("File Name is invalid!!!");*/
+            if (folderRepository.findByPathAndActiveTrue(path + fileName + "/").isPresent()) {
+                throw new Exception("File Already exists with the same name: " + fileName);
+            }
+            Path rootLocation = Paths.get("Uploads");
+            Path uploadDir = Paths.get(rootLocation.toString(), path);
+            Path filePath = uploadDir.resolve(fileName);
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            Folder fileEntity = Folder.builder()
+                    .name(fileName)
+                    .type(Folder.FolderType.FILE)
+                    .createdAt(LocalDateTime.now())
+                    .active(true)
+                    .user(user)
+                    .path(path + fileName + "/")
+                    .parent(folderRepository.findByPathAndActiveTrue(path).orElseThrow(() -> new RuntimeException("Path not found!!!"))).build();
+            folderRepository.save(fileEntity);
+
+
+            response.put("message", "File uploaded successfully");
+            response.put("fileName "+i++, fileName);
+        }
         return response;
     }
 
