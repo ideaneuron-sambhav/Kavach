@@ -181,8 +181,7 @@ public class ClientService {
         Clients clients = clientRepo.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
 
-        if (userId == null) {
-            // Unassign user
+        if (userId == -1) {
             clients.setAssignedUser(null);
             clientRepo.save(clients);
             return Response.<String>builder()

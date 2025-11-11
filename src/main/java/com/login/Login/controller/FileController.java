@@ -1,5 +1,6 @@
 package com.login.Login.controller;
 
+import com.login.Login.dto.Response;
 import com.login.Login.entity.Folder;
 import com.login.Login.entity.User;
 import com.login.Login.repository.FolderRepository;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,24 +38,25 @@ public class FileController {
 
     @PostMapping({"/**","/"})
     @Transactional
-    public Map<String, String> uploadFile(HttpServletRequest request, @RequestParam("file") List<MultipartFile> files) throws Exception {
+    public Response<?> uploadFile(HttpServletRequest request, @RequestParam("file") List<MultipartFile> files) throws RuntimeException, IOException {
         Map<String, String> response = new HashMap<>();
         int i=1;
-        if(files.size()>10) throw new Exception("Only 10 files can be uploaded at a time!!!");
+        if(files.size()>10) throw new RuntimeException("Only 10 files can be uploaded at a time!!!");
         for(MultipartFile file: files) {
             User user = jwtUtil.getAuthenticatedUserFromContext();
             String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
             if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
             if (!path.endsWith("/")) path += "/";
+            path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
             String fileName = file.getOriginalFilename();
             assert fileName != null;
             String encodedFilename = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-            if(file.getSize()>=(10*1024*1024)) throw new Exception("File Size for the File :" + fileName+"exceeds the limit!");
+            if(file.getSize()>=(10*1024*1024)) throw new RuntimeException("File Size for the File :" + fileName +" exceeds the limit!");
 
             System.out.println("Encoded filename: " + encodedFilename);
             /*if(fileName != null && fileName.contains(" ")) throw new Exception("File Name is invalid!!!");*/
             if (folderRepository.findByPathAndActiveTrue(path + fileName + "/").isPresent()) {
-                throw new Exception("File Already exists with the same name: " + fileName);
+                throw new RuntimeException("File Already exists with the same name: " + fileName);
             }
             Path rootLocation = Paths.get("Uploads");
             Path uploadDir = Paths.get(rootLocation.toString(), path);
@@ -70,16 +73,17 @@ public class FileController {
                     .path(path + fileName + "/")
                     .parent(folderRepository.findByPathAndActiveTrue(path).orElseThrow(() -> new RuntimeException("Path not found!!!"))).build();
             folderRepository.save(fileEntity);
-
-
-            response.put("message", "File uploaded successfully");
             response.put("fileName "+i++, fileName);
         }
-        return response;
+        return Response.builder()
+                .data(response)
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("File Uploaded Successfully")
+                .build();
     }
 
     @GetMapping(value = {"/**","/"})
-    public ResponseEntity<Resource> downloadFile(HttpServletRequest request) throws Exception {
+    public ResponseEntity<?> downloadFile(HttpServletRequest request) throws RuntimeException, IOException {
         User user = jwtUtil.getAuthenticatedUserFromContext();
         String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
         path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
@@ -87,7 +91,7 @@ public class FileController {
         if (!path.endsWith("/")) path += "/";
         Folder fileEntity = folderRepository.findByPathAndActiveTrue(path)
                 .orElseThrow(() -> new RuntimeException("File not found"));
-        if(fileEntity.getType()== Folder.FolderType.FOLDER) throw new Exception("Folder cannot be Downloaded");
+        if(fileEntity.getType()== Folder.FolderType.FOLDER) throw new RuntimeException("Folder cannot be Downloaded");
         Path rootLocation = Paths.get("Uploads");
         Path uploadDir = Paths.get(rootLocation.toString(),fileEntity.getPath()).normalize();
         String contentType = Files.probeContentType(uploadDir);

@@ -49,7 +49,7 @@ public class AuthService {
 
     public Response<Map<String,Object>> login(LoginRequest request) throws Exception {
 
-        User user = userRepo.findByEmail(request.getEmail())
+        User user = userRepo.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

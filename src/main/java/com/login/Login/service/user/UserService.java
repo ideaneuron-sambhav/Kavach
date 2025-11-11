@@ -82,7 +82,7 @@ public class UserService {
             }
 
             // Check if email already exists
-            if (userRepo.findByEmail(request.getEmail()).isPresent()) {
+            if (userRepo.findByEmail(request.getEmail().toLowerCase()).isPresent()) {
                 throw new RuntimeException("Email already registered");
             }
 
@@ -104,7 +104,7 @@ public class UserService {
             User user = User.builder()
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
-                    .email(request.getEmail())
+                    .email(request.getEmail().toLowerCase())
                     .password(encodedPassword)
                     .role(role)
                     .active(true)
@@ -120,7 +120,7 @@ public class UserService {
                             .id(user.getId())
                             .firstName(user.getFirstName())
                             .lastName(user.getLastName())
-                            .email(user.getEmail())
+                            .email(user.getEmail().toLowerCase())
                             .role(user.getRole().getName())
                             .permissionIds(user.getPermissions())
                             .active(user.getActive())

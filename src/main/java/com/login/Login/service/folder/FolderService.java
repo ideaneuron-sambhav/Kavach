@@ -1,5 +1,6 @@
 package com.login.Login.service.folder;
 
+import com.login.Login.dto.Response;
 import com.login.Login.dto.folder.FolderResponse;
 import com.login.Login.entity.*;
 import com.login.Login.repository.*;
@@ -8,6 +9,7 @@ import com.login.Login.service.filesystemservice.FileSystemService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -58,7 +60,7 @@ public class FolderService {
         return folderRepository.save(folder);
     }
     @Transactional
-    public FolderResponse createFolder(String name, Folder parentFolder, String path) {
+    public Response<Object> createFolder(String name, Folder parentFolder, String path) {
 
         User user = jwtUtil.getAuthenticatedUserFromContext();
         path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
@@ -77,7 +79,8 @@ public class FolderService {
                 .build();
         folderRepository.save(folder);
         fileSystemService.createFolder(parentFolder.getPath(), name);
-        return FolderResponse.builder()
+        return Response.builder()
+                .data(FolderResponse.builder()
                 .folderId(folder.getId())
                 .type(folder.getType().name())
                 .parentId(folder.getParent().getId())
@@ -85,11 +88,14 @@ public class FolderService {
                 .userId(user.getId())
                 .path(folder.getPath().substring(String.valueOf(user.getId()).length()+1))
                 .createdAt(folder.getCreatedAt())
+                .build())
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("The folder created successfully: " + folder.getName())
                 .build();
     }
 
     @Transactional
-    public FolderResponse updateFolder(String name, Folder folder, String path) throws IOException {
+    public Response<Object> updateFolder(String name, Folder folder, String path) throws IOException {
 
         User user = jwtUtil.getAuthenticatedUserFromContext();
         path = URLDecoder.decode(path, StandardCharsets.UTF_8);
@@ -114,7 +120,8 @@ public class FolderService {
                 .active(true)
                 .build();
         folderRepository.save(updateFolder);
-        return FolderResponse.builder()
+        return Response.builder()
+                .data(FolderResponse.builder()
                 .folderId(updateFolder.getId())
                 .type(updateFolder.getType().name())
                 .parentId(updateFolder.getParent().getId())
@@ -122,6 +129,9 @@ public class FolderService {
                 .userId(user.getId())
                 .path(updateFolder.getPath().substring(String.valueOf(user.getId()).length()+1))
                 .createdAt(updateFolder.getCreatedAt())
+                .build())
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("The Folder Update successfully!!!")
                 .build();
     }
     @Transactional
@@ -150,7 +160,7 @@ public class FolderService {
 
     public List<FolderResponse> listAll(){
         Long userId = jwtUtil.getUserIdFromContext();
-        String path = String.valueOf(userId) + "/";
+        String path = userId + "/";
         List<Folder> listResult = folderRepository.findByEntityBIdCustomQuery(userId, path);
         return listResult.stream().map(FolderResponse::from).toList();
     }
@@ -168,6 +178,7 @@ public class FolderService {
         return fileSystemService.moveToBin(path);
     }
 
+    @Transactional
     private void deleteSubFolders(Folder folder){
         List<Folder> subFolder = folderRepository.findByParentIdAndActiveTrue(folder.getId());
         for(Folder sub : subFolder){

@@ -1,6 +1,6 @@
 package com.login.Login.controller.folder;
 
-import com.login.Login.dto.folder.FolderResponse;
+import com.login.Login.dto.Response;
 import com.login.Login.entity.*;
 import com.login.Login.repository.*;
 import com.login.Login.security.JwtUtil;
@@ -20,15 +20,16 @@ public class FolderController {
     @Autowired
     FolderRepository folderRepository;
     @Autowired
-    private JwtUtil jwtUtil;
+    JwtUtil jwtUtil;
 
 
     @PostMapping({"/**", "/"})
-    public FolderResponse createFolders(HttpServletRequest request) throws Exception {
+    public Response<?> createFolders(HttpServletRequest request) throws Exception {
         User user = jwtUtil.getAuthenticatedUserFromContext();
         String path = user.getId() + "/" + request.getRequestURI().substring("/folders/".length());
         if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
         if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
         String[] folderNames = path.split("/");
         String newFolder = folderNames[folderNames.length - 1];
         String parentFolder = path.substring(0,(path.length()-newFolder.length()-1));
@@ -43,11 +44,12 @@ public class FolderController {
     }
 
     @PatchMapping(value = {"/**", "/"})
-    public FolderResponse renameFolders(HttpServletRequest request, @RequestParam(name = "name", required = true) String name) throws Exception {
+    public Response<?> renameFolders(HttpServletRequest request, @RequestParam(name = "name") String name) throws Exception {
         User user = jwtUtil.getAuthenticatedUserFromContext();
         String path = user.getId() + "/" + request.getRequestURI().substring("/folders/".length());
         if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
         if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
         String[] folderNames = path.split("/");
         String newFolder = folderNames[folderNames.length - 1];
         String parentFolder = path.substring(0,(path.length()-newFolder.length()-1));
@@ -71,6 +73,7 @@ public class FolderController {
         String path = user.getId() + "/" + request.getRequestURI().substring("/folders/".length());
         if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
         if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
 
         return folderService.list(path);
     }
