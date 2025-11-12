@@ -162,9 +162,10 @@ public class RoleService {
             throw new RuntimeException("Admin role permissions cannot be updated");
         }
 
-        List<Permission> permissions = permissionRepository.findAllById(request.getPermissionIds());
+        List<Permission> permissions = permissionRepository.findAllByIdInAndActiveTrue(request.getPermissionIds());
         if (permissions.isEmpty())
             throw new RuntimeException("No valid permissions found for given IDs");
+
 
 
         role.setPermissionIds(permissions.stream().map(Permission::getId).collect(Collectors.toList()));

@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,12 +30,20 @@ public class PermissionService {
 
 
     // List all permissions
-    public Response<List<Permission>> list() {
-        jwtUtil.getAuthenticatedUserFromContext();
-        List<Permission> list = permissionRepo.findAll();
+    public Response<Page<Permission>> list(String keyword, int page, int size) {
+        jwtUtil.ensureAdminFromContext();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Permission> pageResult;
+        String searchTerm = (keyword == null || keyword.trim().isEmpty()) ? "" : keyword.trim();
+        if (searchTerm.isEmpty()) {
+            pageResult = permissionRepo.findAll(pageable);
+        } else {
+            pageResult = permissionRepo.searchByPermissionType(searchTerm, pageable);
+        }
 
-        return Response.<List<Permission>>builder()
-                .data(list)
+
+        return Response.<Page<Permission>>builder()
+                .data(pageResult)
                 .httpStatusCode(200)
                 .message("List of all permissions")
                 .build();

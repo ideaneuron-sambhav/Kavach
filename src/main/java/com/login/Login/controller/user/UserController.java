@@ -17,6 +17,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<Response<?>> registerUser(@RequestBody UserRequest request){
+
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(request));
     }
     @PutMapping("/active/{id}")
