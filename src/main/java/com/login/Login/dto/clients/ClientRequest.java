@@ -1,10 +1,11 @@
 package com.login.Login.dto.clients;
 
-import com.login.Login.dto.nominee.NomineeRequest;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+
+import java.util.Map;
 
 @Getter
 @Setter
@@ -15,6 +16,8 @@ public class ClientRequest {
 
     @NotNull(message = "Client name cannot be blank")
     private String name;
+
+    private String alias;
 
     @Email(message = "Invalid email format")
     @NotNull(message = "Email cannot be blank")
@@ -29,6 +32,6 @@ public class ClientRequest {
 
     private Boolean active;
 
-    @NotNull(message = "Nominee Details are compulsory")
-    private NomineeRequest nominee;
+    private Map<String, Object> details;
+
 }

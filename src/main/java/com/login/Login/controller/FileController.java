@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/files")
@@ -48,8 +49,7 @@ public class FileController {
             if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
             if (!path.endsWith("/")) path += "/";
             path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
-            String fileName = file.getOriginalFilename();
-            assert fileName != null;
+            String fileName = Objects.requireNonNull(file.getOriginalFilename()).toLowerCase();
             String encodedFilename = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
             if(file.getSize()>=(10*1024*1024)) throw new RuntimeException("File Size for the File :" + fileName +" exceeds the limit!");
 

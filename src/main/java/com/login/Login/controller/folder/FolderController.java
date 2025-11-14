@@ -55,10 +55,10 @@ public class FolderController {
         String parentFolder = path.substring(0,(path.length()-newFolder.length()-1));
         Folder folder = folderRepository.findByPathAndActiveTrue(path).orElseThrow(() -> new RuntimeException("Folder not found for the specific name!!!"));
         if(folder.getType()== Folder.FolderType.FILE) throw new Exception("File name cannot be changed in this API!!!");
-        String newPath = parentFolder+name+"/";
+        String newPath = parentFolder+name.toLowerCase()+"/";
         if(folderRepository.findByPathAndActiveTrue(newPath.toLowerCase()+"/").isPresent()) throw new Exception("Folder Already Exists with the Same Name in Lower Case");
         if(folderRepository.findByPathAndActiveTrue(newPath.toUpperCase()+"/").isPresent()) throw new Exception("Folder Already Exists with the Same Name in Upper Case");
-        return folderService.updateFolder(name, folder, newPath);
+        return folderService.updateFolder(name.toLowerCase(), folder, newPath);
 
     }
 

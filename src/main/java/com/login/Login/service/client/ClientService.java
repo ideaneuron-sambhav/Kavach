@@ -2,10 +2,8 @@ package com.login.Login.service.client;
 
 import com.login.Login.dto.Response;
 import com.login.Login.dto.clients.*;
-import com.login.Login.dto.nominee.*;
 import com.login.Login.dto.user.UserResponse;
 import com.login.Login.entity.Clients;
-import com.login.Login.entity.Nominee;
 import com.login.Login.entity.User;
 import com.login.Login.repository.ClientRepository;
 import com.login.Login.repository.CredentialsRepository;
@@ -46,24 +44,14 @@ public class ClientService {
             throw new RuntimeException("Client with this mobile number already exists");
         }
 
-        Nominee nominee = null;
-        if (request.getNominee() != null) {
-            NomineeRequest n = request.getNominee();
-            nominee = Nominee.builder()
-                    .name(n.getName())
-                    .relation(n.getRelation())
-                    .mobileNumber(n.getMobileNumber())
-                    .age(n.getAge())
-                    .build();
-        }
-
         Clients client = Clients.builder()
                 .name(request.getName())
+                .alias(request.getAlias())
                 .email(request.getEmail())
                 .mobileNumber(request.getMobileNumber())
                 .address(request.getAddress())
                 .active(request.getActive() != null ? request.getActive() : true)
-                .nominee(nominee)
+                .details(request.getDetails())
                 .build();
 
         Clients saved = clientRepository.save(client);
@@ -124,21 +112,9 @@ public class ClientService {
         }
 
         if (request.getName() != null) client.setName(request.getName());
+        if(request.getAlias() != null) client.setAlias(request.getAlias());
         if (request.getAddress() != null) client.setAddress(request.getAddress());
-
-        if (request.getNominee() != null) {
-            if (client.getNominee() == null) {
-                client.setNominee(new Nominee());
-            }
-            Nominee nominee = client.getNominee();
-            NomineeRequest n = request.getNominee();
-
-            if (n.getName() != null) nominee.setName(n.getName());
-            if (n.getRelation() != null) nominee.setRelation(n.getRelation());
-            if (n.getMobileNumber() != null) nominee.setMobileNumber(n.getMobileNumber());
-            if(n.getAge() != null) nominee.setAge(n.getAge());
-
-        }
+        if(request.getDetails() != null) client.setDetails(request.getDetails());
 
         Clients updated = clientRepository.save(client);
 
@@ -162,8 +138,6 @@ public class ClientService {
         } else {
             credentialsRepository.deactivateAllByClientId(updated.getId());
         }
-
-
 
         String status = updated.getActive() ? "activated" : "deactivated";
 
@@ -210,16 +184,8 @@ public class ClientService {
 
     // Helper: Convert Entity → Response DTO
     private ClientResponse toResponse(Clients client) {
-        NomineeResponse nomineeResponse = null;
         UserResponse userResponse = null;
-        if (client.getNominee() != null) {
-            nomineeResponse = NomineeResponse.builder()
-                    .name(client.getNominee().getName())
-                    .relation(client.getNominee().getRelation())
-                    .mobileNumber(client.getNominee().getMobileNumber())
-                    .age(client.getNominee().getAge())
-                    .build();
-        }
+
         if (client.getAssignedUser() != null) {
             userResponse= UserResponse.builder()
                     .id(client.getAssignedUser().getId())
@@ -232,13 +198,14 @@ public class ClientService {
         return ClientResponse.builder()
                 .id(client.getId())
                 .name(client.getName())
+                .alias(client.getAlias())
                 .email(client.getEmail())
                 .mobileNumber(client.getMobileNumber())
                 .address(client.getAddress())
                 .active(client.getActive())
                 .createdAt(client.getCreatedAt())
                 .updatedAt(client.getUpdatedAt())
-                .nominee(nomineeResponse)
+                .details(client.getDetails())
                 .user(userResponse)
                 .build();
     }

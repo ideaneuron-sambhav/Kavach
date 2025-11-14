@@ -70,7 +70,7 @@ public class FolderService {
         }
 
         Folder folder = Folder.builder()
-                .name(name)
+                .name(name.toLowerCase())
                 .type(Folder.FolderType.FOLDER)
                 .path(path)
                 .parent(parentFolder)

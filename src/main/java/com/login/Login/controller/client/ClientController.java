@@ -23,6 +23,7 @@ public class ClientController {
     // Add a new client
     @PostMapping("/add")
     public ResponseEntity<Response<ClientResponse>> addClient(@RequestBody ClientRequest request) {
+        System.out.println("DTO received: " + request.getDetails());
         return ResponseEntity.status(HttpStatus.CREATED).body(clientService.addClient(request));
     }
 
