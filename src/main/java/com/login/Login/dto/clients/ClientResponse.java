@@ -1,5 +1,6 @@
 package com.login.Login.dto.clients;
 
+import com.login.Login.dto.groups.GroupsResponse;
 import com.login.Login.dto.user.UserResponse;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -18,6 +19,9 @@ public class ClientResponse {
     private String mobileNumber;
     private String address;
     private Boolean active;
+    private String notes;
+    private GroupsResponse groups;
+    private String type;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Map<String, Object> details;

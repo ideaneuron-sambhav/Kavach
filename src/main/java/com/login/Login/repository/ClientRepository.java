@@ -14,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface ClientRepository extends JpaRepository<Clients, Long> {
     boolean existsByEmail(String email);
+    boolean existsByAlias(String alias);
     boolean existsByMobileNumber(String mobileNumber);
     Optional<Clients> findByEmail(String email);
     @Query("SELECT c FROM Clients c WHERE " +

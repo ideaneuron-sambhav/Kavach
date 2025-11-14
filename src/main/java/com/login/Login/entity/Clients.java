@@ -2,7 +2,6 @@ package com.login.Login.entity;
 
 import com.login.Login.crypto.AesAttributeConverter;
 import com.login.Login.crypto.EncryptedJsonConverter;
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
@@ -10,7 +9,6 @@ import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
@@ -60,10 +58,23 @@ public class Clients {
     private Boolean active = true;
 
 
+    @Column(nullable = false)
+    private String type;
+
+
+    @ManyToOne
+    @JoinColumn(name = "group_id") //, columnDefinition = "integer[]"
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    private Groups groups;
+
+
     /*@Type(JsonBinaryType.class)*/
     @Column(columnDefinition = "text")
     @Convert(converter = EncryptedJsonConverter.class)
     private Map<String, Object> details;
+
+    @Convert(converter = AesAttributeConverter.class)
+    private String notes;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, columnDefinition = "timestamp(6) without time zone")

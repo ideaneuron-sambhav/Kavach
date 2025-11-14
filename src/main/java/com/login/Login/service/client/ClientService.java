@@ -2,11 +2,14 @@ package com.login.Login.service.client;
 
 import com.login.Login.dto.Response;
 import com.login.Login.dto.clients.*;
+import com.login.Login.dto.groups.GroupsResponse;
 import com.login.Login.dto.user.UserResponse;
 import com.login.Login.entity.Clients;
+import com.login.Login.entity.Groups;
 import com.login.Login.entity.User;
 import com.login.Login.repository.ClientRepository;
 import com.login.Login.repository.CredentialsRepository;
+import com.login.Login.repository.GroupsRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
 import jakarta.transaction.Transactional;
@@ -32,12 +35,23 @@ public class ClientService {
     ClientRepository clientRepository;
     @Autowired
     CredentialsRepository credentialsRepository;
+    @Autowired
+    GroupsRepository groupsRepository;
 
-    // Add new client
+
+    @Transactional
     public Response<ClientResponse> addClient(ClientRequest request) {
         jwtUtil.ensureAdminFromContext();
+        Groups groups = null;
+        if(request.getGroupId() != null){
+            groups = groupsRepository.findById(request.getGroupId()).orElseThrow(()-> new RuntimeException("Group not exists"));
+        }
+
         if (clientRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Client with this email already exists");
+        }
+        if(clientRepository.existsByAlias(request.getAlias())){
+            throw new RuntimeException("Alias name already exists");
         }
 
         if (clientRepository.existsByMobileNumber(request.getMobileNumber())) {
@@ -50,6 +64,9 @@ public class ClientService {
                 .email(request.getEmail())
                 .mobileNumber(request.getMobileNumber())
                 .address(request.getAddress())
+                .groups(groups)
+                .notes(request.getNotes())
+                .type(request.getType())
                 .active(request.getActive() != null ? request.getActive() : true)
                 .details(request.getDetails())
                 .build();
@@ -111,8 +128,14 @@ public class ClientService {
             client.setMobileNumber(request.getMobileNumber());
         }
 
+        if(request.getAlias() != null) {
+            if(clientRepository.existsByAlias(request.getAlias())){
+                throw new RuntimeException("Alias Name already exists");
+            }
+            client.setAlias(request.getAlias());
+        }
+
         if (request.getName() != null) client.setName(request.getName());
-        if(request.getAlias() != null) client.setAlias(request.getAlias());
         if (request.getAddress() != null) client.setAddress(request.getAddress());
         if(request.getDetails() != null) client.setDetails(request.getDetails());
 
@@ -185,7 +208,18 @@ public class ClientService {
     // Helper: Convert Entity → Response DTO
     private ClientResponse toResponse(Clients client) {
         UserResponse userResponse = null;
-
+        GroupsResponse groupsResponse = null;
+        if(client.getGroups() != null){
+            groupsResponse = GroupsResponse.builder()
+                    .id(client.getGroups().getId())
+                    .name(client.getGroups().getName())
+                    .alias(client.getGroups().getAlias())
+                    .representativeName(client.getGroups().getRepresentativeName())
+                    .email(client.getGroups().getEmail())
+                    .mobileNumber(client.getGroups().getMobileNumber())
+                    .active(client.getGroups().isActive())
+                    .build();
+        }
         if (client.getAssignedUser() != null) {
             userResponse= UserResponse.builder()
                     .id(client.getAssignedUser().getId())
@@ -202,6 +236,9 @@ public class ClientService {
                 .email(client.getEmail())
                 .mobileNumber(client.getMobileNumber())
                 .address(client.getAddress())
+                .type(client.getType())
+                .notes(client.getNotes())
+                .groups(groupsResponse)
                 .active(client.getActive())
                 .createdAt(client.getCreatedAt())
                 .updatedAt(client.getUpdatedAt())

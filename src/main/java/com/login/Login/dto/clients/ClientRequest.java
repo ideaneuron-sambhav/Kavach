@@ -30,6 +30,12 @@ public class ClientRequest {
     @NotNull(message = "Address cannot be blank")
     private String address;
 
+    private String type;
+
+    private String notes;
+
+    private Long groupId;
+
     private Boolean active;
 
     private Map<String, Object> details;
