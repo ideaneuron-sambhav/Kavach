@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -78,6 +79,11 @@ public class CredentialsController {
     @PostMapping("/otp/generate/update/{id}")
     public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdate(@PathVariable Long id) {
         return ResponseEntity.ok(credentialsService.generateOtpForUpdate(id));
+    }
+
+    @GetMapping("/platforms")
+    public ResponseEntity<Response<List<String>>> listPlatforms(){
+        return ResponseEntity.ok(credentialsService.findPlatform());
     }
 
     // Reveal password using refId only

@@ -2,6 +2,8 @@ package com.login.Login.dto.groups;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 
 @Getter
 @Setter
@@ -16,5 +18,7 @@ public class GroupsResponse {
     private String mobileNumber;
     private String email;
     private boolean active;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
 }

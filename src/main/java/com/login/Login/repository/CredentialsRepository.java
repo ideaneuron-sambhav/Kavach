@@ -15,6 +15,8 @@ import java.util.List;
 public interface CredentialsRepository extends JpaRepository<Credentials, Long> {
     List<Credentials> findAllByClientsId(Long clientsId);
 
+    @Query("SELECT DISTINCT c.platformName FROM Credentials c")
+    List<String> findDistinctPlatformName();
     @Query("""
     SELECT c FROM Credentials c
     WHERE LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))

@@ -32,11 +32,16 @@ public class GroupsService {
         jwtUtil.ensureAdminFromContext();
 
         if (request.getName() == null || request.getName().isBlank()) {
-            throw new RuntimeException("Groups cannot be empty");
+            throw new RuntimeException("Group Name cannot be empty");
         }
-
+        if(groupsRepository.existsByMobileNumber(request.getMobileNumber())){
+            throw new RuntimeException("Mobile Number Already exists!!!");
+        }
+        if(groupsRepository.existsByEmail(request.getEmail())){
+            throw new RuntimeException("Email already registered!!!");
+        }
         if (groupsRepository.findAllByName(request.getName()).isPresent()) {
-            throw new RuntimeException("Group already exists: " + request.getName());
+            throw new RuntimeException("Group with this Name already exists: " + request.getName());
         }
         if(groupsRepository.existsByAlias(request.getAlias())){
             throw new RuntimeException("Group Alias Name already exists" + request.getAlias());
@@ -89,14 +94,16 @@ public class GroupsService {
         jwtUtil.ensureAdminFromContext();
         Groups groups = groupsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Group not found with ID: " + id));
-
+        if(checkUpdate(groups, request)){
+            throw new RuntimeException("Same Details can't be updated");
+        }
         if (request.getName() != null && !request.getName().equals(groups.getName())) {
             if (groupsRepository.existsByName(request.getName())) {
-                throw new RuntimeException("Name already exists");
+                throw new RuntimeException("Group Name already exists");
             }
             groups.setName(request.getName());
         }
-        if(request.getAlias() != null){
+        if(request.getAlias() != null && !request.getAlias().equals(groups.getAlias())){
             if(groupsRepository.existsByAlias(request.getAlias())){
                 throw new RuntimeException("Alias Name already exists");
             }
@@ -104,9 +111,19 @@ public class GroupsService {
         }
 
 
-        if (request.getRepresentativeName() != null) groups.setName(request.getName());
-        if (request.getEmail() != null) groups.setEmail(request.getEmail());
-        if(request.getMobileNumber() != null) groups.setMobileNumber(request.getMobileNumber());
+        if (request.getRepresentativeName() != null) groups.setRepresentativeName(request.getRepresentativeName());
+        if (request.getEmail() != null && !request.getEmail().equals(groups.getEmail())) {
+            if(groupsRepository.existsByEmail(request.getEmail())){
+                throw new RuntimeException("Email already registered!!!");
+            }
+            groups.setEmail(request.getEmail());
+        }
+        if(request.getMobileNumber() != null && !request.getMobileNumber().equals(groups.getMobileNumber())){
+            if(groupsRepository.existsByMobileNumber(request.getMobileNumber())){
+                throw new RuntimeException("Mobile Number Already exists!!!");
+            }
+            groups.setMobileNumber(request.getMobileNumber());
+        }
 
         Groups updated = groupsRepository.save(groups);
 
@@ -142,6 +159,14 @@ public class GroupsService {
                 .build();
     }
 
+    private boolean checkUpdate(Groups groups, GroupsRequest request){
+        return request.getName().equals(groups.getName()) &&
+                request.getAlias().equals(groups.getAlias()) &&
+                request.getRepresentativeName().equals(groups.getRepresentativeName()) &&
+                request.getEmail().equals(groups.getEmail()) &&
+                request.getMobileNumber().equals(groups.getMobileNumber());
+    }
+
     private GroupsResponse toResponse(Groups groups) {
 
         return GroupsResponse.builder()
@@ -152,6 +177,8 @@ public class GroupsService {
                 .mobileNumber(groups.getMobileNumber())
                 .email(groups.getEmail())
                 .active(groups.isActive())
+                .createdAt(groups.getCreatedAt())
+                .updatedAt(groups.getUpdatedAt())
                 .build();
     }
 

@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -37,6 +41,14 @@ public class Groups {
     @Column(nullable = false)
     @Builder.Default
     private boolean active = true;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false, columnDefinition = "timestamp(6) without time zone")
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false, columnDefinition = "timestamp(6) without time zone")
+    private LocalDateTime updatedAt;
 
 
 }

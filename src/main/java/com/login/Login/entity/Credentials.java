@@ -31,6 +31,10 @@ public class Credentials {
     @JoinColumn(name = "clients_id", referencedColumnName = "id")
     private Clients clients;
 
+    @Column(nullable = false)
+    private String platformName;
+
+
     @Convert(converter = AesAttributeConverter.class)
     @Email(message = "Invalid email format")
     @Column(nullable = false)
@@ -44,9 +48,6 @@ public class Credentials {
     @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid mobile number")
     @Column(nullable = false)
     private String mobileNumber;
-
-    @Column(nullable = false)
-    private String platformName;
 
     @Column(name = "search_email")
     private String searchEmail;

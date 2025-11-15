@@ -33,6 +33,14 @@ public class ClientController {
                                                                       @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(clientService.listClients(search, page, size));
     }
+    // List all clients
+    @GetMapping("/list/{groupId}")
+    public ResponseEntity<Response<Page<ClientResponse>>> listClientsByGroup(@PathVariable Long groupId,
+                                                                             @RequestParam(defaultValue = "") String search,
+                                                                             @RequestParam(defaultValue = "0") int page,
+                                                                             @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(clientService.listClientsByGroups(groupId, search, page, size));
+    }
 
     // Update client data
     @PutMapping("/update/{id}")

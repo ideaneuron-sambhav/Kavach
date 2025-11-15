@@ -15,6 +15,8 @@ public interface GroupsRepository extends JpaRepository<Groups, Long> {
     Optional<Groups> findAllById(Long id);
     Optional<Groups> findAllByName(String name);
     boolean existsByName(String name);
+    boolean existsByMobileNumber(String mobileNumber);
+    boolean existsByEmail(String email);
     boolean existsByAlias(String alias);
 
     @Query("SELECT g FROM Groups g WHERE " +

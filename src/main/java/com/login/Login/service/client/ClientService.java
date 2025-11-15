@@ -79,6 +79,35 @@ public class ClientService {
                 .message("Client created successfully")
                 .build();
     }
+    // List all clients filter By group
+    public Response<Page<ClientResponse>> listClientsByGroups(Long groupId, String keyword, int page, int size) {
+        User currentUser = jwtUtil.getAuthenticatedUserFromContext();
+        boolean isAdmin = jwtUtil.isAdminFromContext();
+        Pageable pageable = PageRequest.of(page, size);
+        Groups group = groupsRepository.findById(groupId).orElseThrow(()-> new RuntimeException("Group not exists with ID"));
+        Page<Clients> pageResult;
+        String searchTerm = (keyword == null || keyword.trim().isEmpty()) ? "" : keyword.trim();
+
+        if (isAdmin) {
+            // Admin can view all clients
+            if (searchTerm.isEmpty()) {
+                pageResult = clientRepository.findByGroups(group, pageable);
+            } else {
+                pageResult = clientRepository.searchByNameOrEmailAndGroup(group, searchTerm, pageable);
+            }
+
+        } else {
+            // User can view only assigned clients
+            pageResult = clientRepository.searchByAssignedClientsAndGroups(currentUser, group, searchTerm, pageable);
+        }
+        Page<ClientResponse> responsePage = pageResult.map(this::toResponse);
+
+        return Response.<Page<ClientResponse>>builder()
+                .data(responsePage)
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("Client list fetched successfully for group: "+ group.getName())
+                .build();
+    }
 
     // List all clients
     public Response<Page<ClientResponse>> listClients(String keyword, int page, int size) {

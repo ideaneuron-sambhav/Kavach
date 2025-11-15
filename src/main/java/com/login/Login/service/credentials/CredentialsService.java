@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -291,6 +292,15 @@ public class CredentialsService {
                 .data(response)
                 .httpStatusCode(HttpStatus.OK.value())
                 .message("Password revealed successfully")
+                .build();
+    }
+
+    public Response<List<String>> findPlatform(){
+        List<String> platforms = credentialsRepository.findDistinctPlatformName();
+        return Response.<List<String>>builder()
+                .data(platforms)
+                .httpStatusCode(200)
+                .message("List of platform Name")
                 .build();
     }
 
