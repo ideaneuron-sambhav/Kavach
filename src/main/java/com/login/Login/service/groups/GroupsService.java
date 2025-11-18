@@ -43,8 +43,10 @@ public class GroupsService {
         if (groupsRepository.findAllByName(request.getName()).isPresent()) {
             throw new RuntimeException("Group with this Name already exists: " + request.getName());
         }
-        if(groupsRepository.existsByAlias(request.getAlias())){
-            throw new RuntimeException("Group Alias Name already exists" + request.getAlias());
+        if(request.getAlias()!=null && !request.getAlias().isEmpty()) {
+            if (groupsRepository.existsByAlias(request.getAlias())) {
+                throw new RuntimeException("Group Alias Name already exists" + request.getAlias());
+            }
         }
 
         Groups groups = Groups.builder()

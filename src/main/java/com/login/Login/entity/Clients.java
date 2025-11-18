@@ -57,10 +57,8 @@ public class Clients {
     @Builder.Default
     private Boolean active = true;
 
-
     @Column(nullable = false)
     private String type;
-
 
     @ManyToOne
     @JoinColumn(name = "group_id") //, columnDefinition = "integer[]"
