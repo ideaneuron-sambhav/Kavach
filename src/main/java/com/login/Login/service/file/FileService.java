@@ -1,11 +1,10 @@
-package com.login.Login.controller;
+package com.login.Login.service.file;
 
 import com.login.Login.dto.Response;
 import com.login.Login.entity.Folder;
 import com.login.Login.entity.User;
 import com.login.Login.repository.FolderRepository;
 import com.login.Login.security.JwtUtil;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -13,9 +12,10 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,29 +29,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-@RestController
-@RequestMapping("/files")
-public class FileController {
+@Service
+public class FileService {
     @Autowired
     JwtUtil jwtUtil;
     @Autowired
     FolderRepository folderRepository;
 
-    @PostMapping({"/**","/"})
     @Transactional
-    public Response<?> uploadFile(HttpServletRequest request, @RequestParam("file") List<MultipartFile> files) throws RuntimeException, IOException {
+    public Response<Object> uploadFile(HttpServletRequest request, List<MultipartFile> files) throws IOException {
         Map<String, String> response = new HashMap<>();
-        int i=1;
-        if(files.size()>10) throw new RuntimeException("Only 10 files can be uploaded at a time!!!");
-        for(MultipartFile file: files) {
+        int i = 1;
+        if (files.size() > 10) throw new RuntimeException("Only 10 files can be uploaded at a time!!!");
+        for (MultipartFile file : files) {
             User user = jwtUtil.getAuthenticatedUserFromContext();
             String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
             if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
             if (!path.endsWith("/")) path += "/";
-            path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
+            path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
             String fileName = Objects.requireNonNull(file.getOriginalFilename()).toLowerCase();
             String encodedFilename = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-            if(file.getSize()>=(10*1024*1024)) throw new RuntimeException("File Size for the File :" + fileName +" exceeds the limit!");
+            if (file.getSize() >= (10 * 1024 * 1024))
+                throw new RuntimeException("File Size for the File :" + fileName + " exceeds the limit!");
 
             System.out.println("Encoded filename: " + encodedFilename);
             /*if(fileName != null && fileName.contains(" ")) throw new Exception("File Name is invalid!!!");*/
@@ -73,7 +72,7 @@ public class FileController {
                     .path(path + fileName + "/")
                     .parent(folderRepository.findByPathAndActiveTrue(path).orElseThrow(() -> new RuntimeException("Path not found!!!"))).build();
             folderRepository.save(fileEntity);
-            response.put("fileName "+i++, fileName);
+            response.put("fileName " + i++, fileName);
         }
         return Response.builder()
                 .data(response)
@@ -82,8 +81,8 @@ public class FileController {
                 .build();
     }
 
-    @GetMapping(value = {"/**","/"})
-    public ResponseEntity<?> downloadFile(HttpServletRequest request) throws RuntimeException, IOException {
+    @Transactional
+    public ResponseEntity<Resource> downloadFile(HttpServletRequest request) throws IOException {
         User user = jwtUtil.getAuthenticatedUserFromContext();
         String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
         path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
@@ -111,4 +110,5 @@ public class FileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getName()+ "\"")
                 .body(resource);
     }
+
 }
