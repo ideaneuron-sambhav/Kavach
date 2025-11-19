@@ -7,7 +7,6 @@ import com.login.Login.repository.*;
 import com.login.Login.security.JwtUtil;
 import com.login.Login.service.filesystemservice.FileSystemService;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,16 +21,15 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class FolderService {
     @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
     @Autowired
-    private FolderRepository folderRepository;
+    FolderRepository folderRepository;
     @Autowired
-    private JwtUtil jwtUtil;
+    JwtUtil jwtUtil;
     @Autowired
-    private FileSystemService fileSystemService;
+    FileSystemService fileSystemService;
 
 
     public Folder createUserRootFolder(Long userId) throws IOException {

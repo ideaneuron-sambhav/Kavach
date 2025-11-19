@@ -33,7 +33,7 @@ public class CredentialsController {
                 .body(credentialsService.addCredential(request));
     }
 
-    // List all credentials (password hidden)
+    // List all credentials (Details hidden)
     @GetMapping("/list")
     public ResponseEntity<Response<Page<CredentialsResponse>>> listCredentials(@RequestParam(defaultValue = "") String search,
                                                                                @RequestParam(defaultValue = "0") int page,
@@ -51,14 +51,14 @@ public class CredentialsController {
         return ResponseEntity.ok(credentialsService.updateCredential(id, request, otpVerifyRequest.getRefId(), otpVerifyRequest.getOtp()));
     }
 
-    // Update credential password
-    @PutMapping("/update/password/{id}")
-    public ResponseEntity<Response<CredentialsResponse>> updateCredentialPassword(
+    // Update credential Details
+    @PutMapping("/update/details/{id}")
+    public ResponseEntity<Response<CredentialsResponse>> updateCredentialDetails(
             @PathVariable Long id,  //CredentialsId
             @RequestBody UpdateCredentialsRequest updateCredentialsRequest) {
         CredentialsRequest request = updateCredentialsRequest.getCredentialsRequest();
         OtpVerifyRequest otpVerifyRequest = updateCredentialsRequest.getOtpVerifyRequest();
-        return ResponseEntity.ok(credentialsService.updatePassword(id, request, otpVerifyRequest.getRefId(), otpVerifyRequest.getOtp()));
+        return ResponseEntity.ok(credentialsService.updateDetails(id, request, otpVerifyRequest.getRefId(), otpVerifyRequest.getOtp()));
     }
 
     // Toggle active/inactive
@@ -67,14 +67,14 @@ public class CredentialsController {
         return ResponseEntity.ok(credentialsService.toggleActive(id));
     }
 
-    // Generate OTP for password reveal
-    @PostMapping("/otp/generate/password/{id}")
-    public ResponseEntity<Response<Map<String,Object>>> generateOtpForPassword(@PathVariable Long id) {
-        return ResponseEntity.ok(credentialsService.generateOtpForPassword(id));
+    // Generate OTP for Details reveal
+    @PostMapping("/otp/generate/details/{id}")
+    public ResponseEntity<Response<Map<String,Object>>> generateOtpForDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(credentialsService.generateOtpForDetails(id));
     }
-    @PostMapping("/otp/generate/update/password/{id}")
-    public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdatePassword(@PathVariable Long id) {
-        return ResponseEntity.ok(credentialsService.generateOtpForUpdatePassword(id));
+    @PostMapping("/otp/generate/update/details/{id}")
+    public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdateDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(credentialsService.generateOtpForUpdateDetails(id));
     }
     @PostMapping("/otp/generate/update/{id}")
     public ResponseEntity<Response<Map<String,Object>>> generateOtpForUpdate(@PathVariable Long id) {
@@ -82,13 +82,13 @@ public class CredentialsController {
     }
 
     @GetMapping("/platforms")
-    public ResponseEntity<Response<List<String>>> listPlatforms(){
-        return ResponseEntity.ok(credentialsService.findPlatform());
+    public ResponseEntity<Response<List<String>>> listPlatforms(@RequestParam(defaultValue = "") String search){
+        return ResponseEntity.ok(credentialsService.findPlatform(search));
     }
 
-    // Reveal password using refId only
-    @PostMapping("/otp/verify/password")
-    public ResponseEntity<Response<CredentialRevealResponse>> revealPassword(@RequestBody OtpVerifyRequest request) {
-        return ResponseEntity.ok(credentialsService.revealPassword(request.getRefId(),request.getOtp()));
+    // Reveal Details using refId only
+    @PostMapping("/otp/verify/details")
+    public ResponseEntity<Response<CredentialRevealResponse>> revealDetails(@RequestBody OtpVerifyRequest request) {
+        return ResponseEntity.ok(credentialsService.revealDetails(request.getRefId(),request.getOtp()));
     }
 }

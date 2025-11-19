@@ -1,6 +1,7 @@
 package com.login.Login.entity;
 
 import com.login.Login.crypto.AesAttributeConverter;
+import com.login.Login.crypto.EncryptedJsonConverter;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -13,6 +14,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "credentials")
@@ -34,21 +36,20 @@ public class Credentials {
     @Column(nullable = false)
     private String platformName;
 
-
+    //Changed Email to UserName
     @Convert(converter = AesAttributeConverter.class)
-    @Email(message = "Invalid email format")
     @Column(nullable = false)
-    private String email;
+    private String userName;
 
-    @Convert(converter = AesAttributeConverter.class)
+/*    @Convert(converter = AesAttributeConverter.class)
     @NotNull(message = "Password cannot be blank")
     private String password;
-
+*/
     @Convert(converter = AesAttributeConverter.class)
     @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid mobile number")
     @Column(nullable = false)
     private String mobileNumber;
-
+/*
     @Column(name = "search_email")
     private String searchEmail;
 
@@ -56,7 +57,7 @@ public class Credentials {
     private String maskedEmail;
 
     @Column(name = "masked_mobile_number")
-    private String maskedMobileNumber;
+    private String maskedMobileNumber;*/
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, columnDefinition = "timestamp(6) without time zone")
@@ -65,18 +66,23 @@ public class Credentials {
     @UpdateTimestamp
     @Column(nullable = false, columnDefinition = "timestamp(6) without time zone")
     private LocalDateTime updatedAt;
-
+/*
     @Column(nullable = false)
     private Boolean twoFA;
 
     @Column(name = "twofa_types", columnDefinition = "text[]")
     @JdbcTypeCode(SqlTypes.ARRAY)
-    private List<String> twoFATypes;
+    private List<String> twoFATypes;*/
 
     @Builder.Default
     @Column(nullable = false)
-    private Boolean active = true; // active/inactive toggle
+    private Boolean active = true;
 
+    /*@Type(JsonBinaryType.class)*/
+    @Column(columnDefinition = "text")
+    @Convert(converter = EncryptedJsonConverter.class)
+    private Map<String, Object> details;
+/*
     @PrePersist
     @PreUpdate
     private void preSave() {
@@ -105,7 +111,7 @@ public class Credentials {
                 twoFATypes.clear();
             }
         }
-    }
+    }*/
     private String maskMobile(String mobile) {
         if (mobile == null || mobile.length() <= 5) return mobile; // too short to mask
 

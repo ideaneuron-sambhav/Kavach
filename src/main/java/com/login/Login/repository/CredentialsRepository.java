@@ -15,22 +15,22 @@ import java.util.List;
 public interface CredentialsRepository extends JpaRepository<Credentials, Long> {
     List<Credentials> findAllByClientsId(Long clientsId);
 
-    @Query("SELECT DISTINCT c.platformName FROM Credentials c")
-    List<String> findDistinctPlatformName();
+
+    @Query("SELECT DISTINCT c.platformName FROM Credentials c WHERE LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<String> findDistinctPlatformName(@Param("keyword") String keyword);
     @Query("""
     SELECT c FROM Credentials c
-    WHERE LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))
-    OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
-    OR LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    WHERE LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(c.mobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
     """)
     Page<Credentials> searchByMaskedForAdmin(@Param("keyword") String keyword, Pageable pageable);
 
     @Query("""
     SELECT c FROM Credentials c
-    WHERE c.clients.assignedUser = :user
-    AND (LOWER(c.maskedEmail) LIKE LOWER(CONCAT('%', :keyword, '%'))
-    OR LOWER(c.maskedMobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
-    OR LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    WHERE c.clients.assignedUser = :user 
+    AND c.active = true
+    AND (LOWER(c.platformName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(c.mobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%')))
     """)
     Page<Credentials> searchByMaskedForUser(@Param("user") User user,
                                             @Param("keyword") String keyword,

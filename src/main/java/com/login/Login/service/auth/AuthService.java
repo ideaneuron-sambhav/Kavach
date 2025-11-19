@@ -15,7 +15,6 @@ import com.login.Login.security.JwtUtil;
 import com.login.Login.repository.PermissionRepository;
 import com.login.Login.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,23 +25,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     @Autowired
     UserRepository userRepo;
     @Autowired
     JwtUtil jwtUtil;
-
     @Autowired
     JwtBlacklistService jwtBlacklistService;
-
     @Autowired
     PermissionRepository permissionRepo;
-
     @Autowired
     BCryptPasswordEncoder passwordEncoder;
-
     @Autowired
     OtpService otpService;
 

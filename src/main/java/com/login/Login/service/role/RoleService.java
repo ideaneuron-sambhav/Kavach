@@ -11,7 +11,7 @@ import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
 import com.login.Login.repository.PermissionRepository;
 import com.login.Login.repository.RoleRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +21,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class RoleService {
-    private final JwtUtil jwtUtil;
-    private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    JwtUtil jwtUtil;
+    @Autowired
+    RoleRepository roleRepository;
+    @Autowired
+    PermissionRepository permissionRepository;
+    @Autowired
+    UserRepository userRepository;
 
     public Response<Page<Role>> list(String keyword, int page, int size) {
             jwtUtil.getAuthenticatedUserFromContext();

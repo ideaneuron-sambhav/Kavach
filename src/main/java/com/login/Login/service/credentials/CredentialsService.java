@@ -12,7 +12,7 @@ import com.login.Login.repository.CredentialsRepository;
 import com.login.Login.security.JwtUtil;
 import com.login.Login.service.otp.OtpEntry;
 import com.login.Login.service.otp.OtpService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,17 +26,19 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class CredentialsService {
-
-    private final CredentialsRepository credentialsRepository;
-    private final ClientRepository clientRepository;
-    private final OtpService otpService;
-    private final JwtUtil jwtUtil;
+    @Autowired
+    CredentialsRepository credentialsRepository;
+    @Autowired
+    ClientRepository clientRepository;
+    @Autowired
+    OtpService otpService;
+    @Autowired
+    JwtUtil jwtUtil;
 
     // Add new credential
     public Response<CredentialsResponse> addCredential(CredentialsRequest request) {
-        jwtUtil.ensureAdminFromContext(); // Only admin can create credentials
+        jwtUtil.ensureAdminFromContext();
         Long clientId = request.getClientId();
         Clients client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + clientId));
@@ -45,12 +47,10 @@ public class CredentialsService {
         }
         Credentials credential = Credentials.builder()
                 .clients(client)
-                .email(request.getEmail())
-                .password(request.getPassword())
+                .userName(request.getUserName())
                 .mobileNumber(request.getMobileNumber())
                 .platformName(request.getPlatformName())
-                .twoFA(request.getTwoFA())
-                .twoFATypes(request.getTwoFATypes())
+                .details(request.getDetails())
                 .active(request.getActive() != null ? request.getActive() : true)
                 .build();
 
@@ -63,7 +63,7 @@ public class CredentialsService {
                 .build();
     }
 
-    // List all credentials (password hidden)
+    // List all credentials (Details hidden)
     public Response<Page<CredentialsResponse>> listCredentials(String keyword, int page, int size) {
         User user = jwtUtil.getAuthenticatedUserFromContext();
 
@@ -114,13 +114,9 @@ public class CredentialsService {
 
         ensureAccess(credential); // Check if current user can update
 
-        if (request.getEmail() != null) credential.setEmail(request.getEmail());
+        if (request.getUserName() != null) credential.setUserName(request.getUserName());
         if (request.getMobileNumber() != null) credential.setMobileNumber(request.getMobileNumber());
         if (request.getPlatformName() != null) credential.setPlatformName(request.getPlatformName());
-        if (request.getTwoFA() != null) credential.setTwoFA(request.getTwoFA());
-        if (request.getTwoFATypes() != null) credential.setTwoFATypes(request.getTwoFATypes());
-        if (request.getActive() != null) credential.setActive(request.getActive());
-
         Credentials updated = credentialsRepository.save(credential);
 
         return Response.<CredentialsResponse>builder()
@@ -132,7 +128,7 @@ public class CredentialsService {
 
     // Update credential
     @Transactional
-    public Response<CredentialsResponse> updatePassword(Long id, CredentialsRequest request, String refId, String otp) {
+    public Response<CredentialsResponse> updateDetails(Long id, CredentialsRequest request, String refId, String otp) {
         OtpEntry otpEntry = otpService.getOtpEntry(refId);
 
         if (otpEntry == null || otpEntry.isExpired()) {
@@ -156,14 +152,14 @@ public class CredentialsService {
 
         ensureAccess(credential); // Check if current user can update
 
-        if (request.getPassword() != null) credential.setPassword(request.getPassword());
+        if (request.getDetails() != null) credential.setDetails(request.getDetails());
 
         Credentials updated = credentialsRepository.save(credential);
 
         return Response.<CredentialsResponse>builder()
                 .data(toResponse(updated))
                 .httpStatusCode(HttpStatus.OK.value())
-                .message("Password updated successfully")
+                .message("Details updated successfully")
                 .build();
     }
 
@@ -177,7 +173,15 @@ public class CredentialsService {
         if(!clients.getActive()){
             throw new RuntimeException("Client is inactive: " + clients.getName());
         }
-        credential.setActive(!credential.getActive());
+        if(credential.getActive()==false){
+            if (jwtUtil.isAdminFromContext()){
+                credential.setActive(true);
+            }else{
+                throw new RuntimeException("Access Denied to active credentials");
+            }
+        }else{
+            credential.setActive(false);
+        }
         Credentials updated = credentialsRepository.save(credential);
 
         String status = updated.getActive() ? "activated" : "deactivated";
@@ -208,8 +212,8 @@ public class CredentialsService {
                 .message("OTP generated successfully for credential ID: " + credentialId)
                 .build();
     }
-    // Generate OTP for Update Password
-    public Response<Map<String,Object>> generateOtpForUpdatePassword(Long credentialId) {
+    // Generate OTP for Update Details
+    public Response<Map<String,Object>> generateOtpForUpdateDetails(Long credentialId) {
         Credentials credential = credentialsRepository.findById(credentialId)
                 .orElseThrow(() -> new RuntimeException("Credential not found with ID: " + credentialId));
 
@@ -220,7 +224,7 @@ public class CredentialsService {
         var otpResponse = otpService.generateOtpUsingId(credentialId);
         Map<String, Object> result = new HashMap<>();
         result.put("refId", otpResponse.getRefId());
-        System.out.println("The OTP for the updating password is: "+otpResponse.getOtp());
+        System.out.println("The OTP for the updating Details is: "+otpResponse.getOtp());
 
         return Response.<Map<String,Object>>builder()
                 .data(result)
@@ -229,8 +233,8 @@ public class CredentialsService {
                 .build();
     }
 
-    // Generate OTP for password reveal
-    public Response<Map<String,Object>> generateOtpForPassword(Long credentialId) {
+    // Generate OTP for Details reveal
+    public Response<Map<String,Object>> generateOtpForDetails(Long credentialId) {
         if(credentialId == null){
             throw new RuntimeException("Id must be shared for generating OTP!!!");
         }
@@ -244,7 +248,7 @@ public class CredentialsService {
         var otpResponse = otpService.generateOtpUsingId(credentialId);
         Map<String, Object> result = new HashMap<>();
         result.put("refId", otpResponse.getRefId());
-        System.out.println("The OTP for the password is: "+otpResponse.getOtp());
+        System.out.println("The OTP for the details is: "+otpResponse.getOtp());
 
         return Response.<Map<String,Object>>builder()
                 .data(result)
@@ -253,8 +257,8 @@ public class CredentialsService {
                 .build();
     }
 
-    // Reveal password
-    public Response<CredentialRevealResponse> revealPassword(String refId, String otp) {
+    // Reveal Details
+    public Response<CredentialRevealResponse> revealDetails(String refId, String otp) {
         OtpEntry otpEntry = otpService.getOtpEntry(refId);
 
         if (otpEntry == null || otpEntry.isExpired()) {
@@ -280,23 +284,25 @@ public class CredentialsService {
         Credentials credentials = credentialsRepository.findById(id).orElse(null);
 
 
-        ensureAccess(credentials); // Only admin/assigned user can reveal password
+        ensureAccess(credentials); // Only admin/assigned user can reveal Details
 
         assert credentials != null;
         CredentialRevealResponse response = CredentialRevealResponse.builder()
                 .credentialId(credentials.getId())
-                .password(credentials.getPassword())
+                .details(credentials.getDetails())
                 .build();
 
         return Response.<CredentialRevealResponse>builder()
                 .data(response)
                 .httpStatusCode(HttpStatus.OK.value())
-                .message("Password revealed successfully")
+                .message("Details revealed successfully")
                 .build();
     }
 
-    public Response<List<String>> findPlatform(){
-        List<String> platforms = credentialsRepository.findDistinctPlatformName();
+    public Response<List<String>> findPlatform(String keyword){
+        jwtUtil.getAuthenticatedUserFromContext();
+        String searchKeyword = (keyword != null) ? keyword : "";
+        List<String> platforms = credentialsRepository.findDistinctPlatformName(searchKeyword);
         return Response.<List<String>>builder()
                 .data(platforms)
                 .httpStatusCode(200)
@@ -318,16 +324,14 @@ public class CredentialsService {
 
 
 
-    // Mapper: Entity -> Response DTO (without password)
+    // Mapper: Entity -> Response DTO (without Details)
     private CredentialsResponse toResponse(Credentials credential) {
         return CredentialsResponse.builder()
                 .id(credential.getId())
-                .clients(credential.getClients())
-                .maskedEmail(credential.getMaskedEmail())
-                .maskedMobileNumber(credential.getMaskedMobileNumber())
+                .clients(credential.getClients().getName())
+                .userName(credential.getUserName())
+                .mobileNumber(credential.getMobileNumber())
                 .platformName(credential.getPlatformName())
-                .twoFA(credential.getTwoFA())
-                .twoFATypes(credential.getTwoFATypes())
                 .active(credential.getActive())
                 .createdAt(credential.getCreatedAt())
                 .updatedAt(credential.getUpdatedAt())

@@ -49,6 +49,12 @@ public class ClientController {
         return ResponseEntity.ok(clientService.updateClient(id, request));
     }
 
+    @PutMapping("/update/note/{id}")
+    public ResponseEntity<Response<ClientResponse>> updateNotes(@PathVariable Long id,
+                                                                 @RequestBody String notes) {
+        return ResponseEntity.ok(clientService.updateClientNotes(id, notes));
+    }
+
     // Assign a Client to Specific User using User_ID and Client_ID
     @PostMapping("/assign")
     public Response<?> assignClient(@RequestParam Long clientId,

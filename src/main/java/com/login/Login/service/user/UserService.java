@@ -26,13 +26,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
-    private final UserRepository userRepo;
-    private final JwtUtil jwtUtil;
-    private final RoleRepository roleRepository;
-    private final FolderService folderService;
     @Autowired
-    private final BCryptPasswordEncoder passwordEncoder;
+    UserRepository userRepo;
+    @Autowired
+    JwtUtil jwtUtil;
+    @Autowired
+    RoleRepository roleRepository;
+    @Autowired
+    FolderService folderService;
+    @Autowired
+    BCryptPasswordEncoder passwordEncoder;
 
     public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
         jwtUtil.ensureAdminFromContext();

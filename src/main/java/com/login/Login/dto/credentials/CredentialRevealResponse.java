@@ -2,6 +2,8 @@ package com.login.Login.dto.credentials;
 
 import lombok.*;
 
+import java.util.Map;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -9,5 +11,5 @@ import lombok.*;
 @Builder
 public class CredentialRevealResponse {
     private Long credentialId;
-    private String password;
+    private Map<String, Object> details;
 }

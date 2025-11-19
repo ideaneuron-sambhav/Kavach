@@ -19,10 +19,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class GroupsService {
-
     @Autowired
     GroupsRepository groupsRepository;
-
     @Autowired
     JwtUtil jwtUtil;
 

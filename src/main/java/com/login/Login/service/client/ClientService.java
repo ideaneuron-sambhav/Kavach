@@ -136,6 +136,19 @@ public class ClientService {
                 .message("Client list fetched successfully")
                 .build();
     }
+    public Response<ClientResponse> updateClientNotes(Long id, String notes) {
+        jwtUtil.ensureAdminFromContext();
+        Clients client = clientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
+        if (notes != null) client.setNotes(notes);
+        Clients updated = clientRepository.save(client);
+
+        return Response.<ClientResponse>builder()
+                .data(toResponse(updated))
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("Client Notes updated successfully")
+                .build();
+    }
 
     // ✏Update client
     public Response<ClientResponse> updateClient(Long id, ClientRequest request) {
@@ -157,7 +170,7 @@ public class ClientService {
             client.setMobileNumber(request.getMobileNumber());
         }
 
-        if(request.getAlias() != null) {
+        if(request.getAlias() != null && !request.getAlias().equals(client.getAlias())) {
             if(clientRepository.existsByAlias(request.getAlias())){
                 throw new RuntimeException("Alias Name already exists");
             }
