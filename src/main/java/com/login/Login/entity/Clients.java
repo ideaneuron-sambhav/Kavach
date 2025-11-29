@@ -29,7 +29,9 @@ public class Clients {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String firstName;
+
+    private String lastName;
 
     private String alias;
 

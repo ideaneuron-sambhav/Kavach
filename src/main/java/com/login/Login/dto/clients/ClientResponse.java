@@ -13,7 +13,8 @@ import java.util.Map;
 @Builder
 public class ClientResponse {
     private Long id;
-    private String name;
+    private String firstName;
+    private String lastName;
     private String alias;
     private String email;
     private String mobileNumber;

@@ -1,3 +1,4 @@
+/*
 package com.login.Login.controller.credentials;
 
 import com.login.Login.dto.Response;
@@ -92,3 +93,4 @@ public class CredentialsController {
         return ResponseEntity.ok(credentialsService.revealDetails(request.getRefId(),request.getOtp()));
     }
 }
+*/

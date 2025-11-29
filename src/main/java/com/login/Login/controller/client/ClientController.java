@@ -8,8 +8,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -42,17 +45,22 @@ public class ClientController {
         return ResponseEntity.ok(clientService.listClientsByGroups(groupId, search, page, size));
     }
 
+    @GetMapping("/notes/{id}")
+    public ResponseEntity<Response<?>> viewClientNotes(@PathVariable Long id) {
+        return ResponseEntity.ok(clientService.viewClientNotes(id));
+    }
+
     // Update client data
     @PutMapping("/update/{id}")
     public ResponseEntity<Response<ClientResponse>> updateClient(@PathVariable Long id,
-            @RequestBody ClientRequest request) {
+                                                                 @RequestBody ClientRequest request) {
         return ResponseEntity.ok(clientService.updateClient(id, request));
     }
 
-    @PutMapping("/update/note/{id}")
-    public ResponseEntity<Response<ClientResponse>> updateNotes(@PathVariable Long id,
-                                                                 @RequestBody String notes) {
-        return ResponseEntity.ok(clientService.updateClientNotes(id, notes));
+    @PutMapping("/update/notes/{id}")
+    public ResponseEntity<Response<?>> updateNotes(@PathVariable Long id,
+                                                                 @RequestBody ClientRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clientService.updateClientNotes(id, request.getNotes()));
     }
 
     // Assign a Client to Specific User using User_ID and Client_ID

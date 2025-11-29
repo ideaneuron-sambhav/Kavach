@@ -14,8 +14,10 @@ import java.util.Map;
 @Builder
 public class ClientRequest {
 
-    @NotNull(message = "Client name cannot be blank")
-    private String name;
+    @NotNull(message = "Client First Name cannot be blank")
+    private String firstName;
+
+    private String lastName;
 
     private String alias;
 

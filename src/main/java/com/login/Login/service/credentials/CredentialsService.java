@@ -1,3 +1,4 @@
+/*
 package com.login.Login.service.credentials;
 
 import com.login.Login.dto.Response;
@@ -43,7 +44,7 @@ public class CredentialsService {
         Clients client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + clientId));
         if(!client.getActive()){
-            throw new RuntimeException("Client is inactive: "+client.getName());
+            throw new RuntimeException("Client is inactive: "+client.getFirstName() + " " + client.getLastName());
         }
         Credentials credential = Credentials.builder()
                 .clients(client)
@@ -171,7 +172,7 @@ public class CredentialsService {
         ensureAccess(credential); // Check if current user can toggle
         Clients clients = credential.getClients();
         if(!clients.getActive()){
-            throw new RuntimeException("Client is inactive: " + clients.getName());
+            throw new RuntimeException("Client is inactive: " + clients.getFirstName() + clients.getLastName());
         }
         if(credential.getActive()==false){
             if (jwtUtil.isAdminFromContext()){
@@ -338,3 +339,4 @@ public class CredentialsService {
                 .build();
     }
 }
+*/

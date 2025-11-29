@@ -9,6 +9,7 @@ import com.login.Login.entity.User;
 import com.login.Login.repository.RoleRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
+import com.login.Login.service.email.EmailService;
 import com.login.Login.service.folder.FolderService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.security.SecureRandom;
 
 
 @Service
@@ -36,6 +38,8 @@ public class UserService {
     FolderService folderService;
     @Autowired
     BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    EmailService emailService;
 
     public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
         jwtUtil.ensureAdminFromContext();
@@ -77,9 +81,9 @@ public class UserService {
             if (request.getEmail() == null || request.getEmail().isBlank()) {
                 throw new RuntimeException("Email cannot be empty");
             }
-            if (request.getPassword() == null || request.getPassword().isBlank()) {
+            /*if (request.getPassword() == null || request.getPassword().isBlank()) {
                 throw new RuntimeException("Password cannot be empty");
-            }
+            }*/
             if (request.getFirstName() == null || request.getFirstName().isBlank()) {
                 throw new RuntimeException("First name cannot be empty");
             }
@@ -89,8 +93,6 @@ public class UserService {
                 throw new RuntimeException("Email already registered");
             }
 
-            // Encode password
-            String encodedPassword = passwordEncoder.encode(request.getPassword());
             Role role;
 
 
@@ -99,6 +101,10 @@ public class UserService {
             Role role = roleRepository.findByNameIgnoreCase(roleName)
             .orElseThrow(()-> new RuntimeException("Role not found: "+ roleName));
 */
+            String password = generatePassword(request.getFirstName());
+            String encodedPassword = passwordEncoder.encode(password);
+            //emailService.sendPasswordEmail(request.getEmail(), password);
+            System.out.println(password);
 
             String requestedRole = request.getRole();
             role = roleRepository.findByNameIgnoreCase(requestedRole)
@@ -183,6 +189,19 @@ public class UserService {
                 .httpStatusCode(200)
                 .message((user.getActive() ? "User activated" : "User deactivated") + " by admin: " + adminUser.getEmail())
                 .build();
+    }
+    private String generatePassword(String name) {
+
+        String clean = name.trim().toUpperCase();
+
+        // First four letters (pad with x if less than 4)
+        String firstFour = clean.length() >= 4 ? clean.substring(0, 4) : String.format("%-4s", clean).replace(' ', 'X');
+
+        // Generate 4 random digits
+        SecureRandom random = new SecureRandom();
+        int digits = 1000 + random.nextInt(9000);
+
+        return firstFour + digits;
     }
 
 
