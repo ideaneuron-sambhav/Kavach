@@ -43,13 +43,14 @@ public class UserService {
 
     public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
         jwtUtil.ensureAdminFromContext();
+        Role role = roleRepository.findByNameIgnoreCase("Clients").orElseThrow(()-> new RuntimeException("Error"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").descending());
         Page<User> usersPage;
         if (keyword != null && !keyword.isBlank()) {
-            usersPage = userRepo.searchUsers(keyword.trim(), pageable);
+            usersPage = userRepo.searchUsers(keyword.trim(), pageable, role);
         } else {
-            usersPage = userRepo.findAll(pageable);
+            usersPage = userRepo.findAllByRoleNot(pageable, role);
         }
         Page<UserResponse> userResponses = usersPage.map(user -> UserResponse.builder()
                 .id(user.getId())

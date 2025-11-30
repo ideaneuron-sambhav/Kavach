@@ -58,25 +58,37 @@ public class FolderService {
         return folderRepository.save(folder);
     }
     @Transactional
-    public Response<Object> createFolder(String name, Folder parentFolder, String path) {
+    public Response<Object> createFolder(String path, User user) throws Exception {
+        jwtUtil.getAuthenticatedUserFromContext();
+        if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
+        if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
+        String[] folderNames = path.split("/");
+        String name = folderNames[folderNames.length - 1];
+        String parentFolderPath = path.substring(0,(path.length()-name.length()-1));
 
-        User user = jwtUtil.getAuthenticatedUserFromContext();
-        path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
+        Folder parentFolder = folderRepository.findByPathAndActiveTrue(parentFolderPath).orElseThrow(() -> new RuntimeException("Folder Cannot be created in sequence!!!"));
+        if(parentFolder.getType()== Folder.FolderType.FILE) throw new Exception("Folder cannot be created in File!!!");
+        String newPath = parentFolder.getPath()+name+"/";
+        if(folderRepository.findByPathAndActiveTrue(parentFolder.getPath()+name.toLowerCase()+"/").isPresent()) throw new Exception("Folder Already Exists with the Same Name in Lower Case");
+        if(folderRepository.findByPathAndActiveTrue(parentFolder.getPath()+name.toUpperCase()+"/").isPresent()) throw new Exception("Folder Already Exists with the Same Name in Upper Case");
+
+        newPath = java.net.URLDecoder.decode(newPath, StandardCharsets.UTF_8);
         name = java.net.URLDecoder.decode(name, StandardCharsets.UTF_8);
-        if(folderRepository.findByPathAndActiveTrue(path).isPresent()){
+        if(folderRepository.findByPathAndActiveTrue(newPath).isPresent()){
             throw new RuntimeException("Folder already exist with the same name : " + name);
         }
 
         Folder folder = Folder.builder()
                 .name(name.toLowerCase())
                 .type(Folder.FolderType.FOLDER)
-                .path(path)
+                .path(newPath.toLowerCase())
                 .parent(parentFolder)
                 .user(user)
                 .active(true)
                 .build();
         folderRepository.save(folder);
-        fileSystemService.createFolder(parentFolder.getPath(), name);
+        fileSystemService.createFolder(parentFolder.getPath(), name.toLowerCase());
         return Response.builder()
                 .data(FolderResponse.builder()
                 .folderId(folder.getId())
@@ -93,9 +105,21 @@ public class FolderService {
     }
 
     @Transactional
-    public Response<Object> updateFolder(String name, Folder folder, String path) throws IOException {
+    public Response<Object> updateFolder(String path,  String name, User user) throws Exception {
 
-        User user = jwtUtil.getAuthenticatedUserFromContext();
+        jwtUtil.getAuthenticatedUserFromContext();
+        if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
+        if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
+        String[] folderNames = path.split("/");
+        String newFolder = folderNames[folderNames.length - 1];
+        String parentFolder = path.substring(0,(path.length()-newFolder.length()-1));
+        Folder folder = folderRepository.findByPathAndActiveTrue(path).orElseThrow(() -> new RuntimeException("Folder not found for the specific name!!!"));
+        if(folder.getType()== Folder.FolderType.FILE) throw new Exception("File name cannot be changed in this API!!!");
+        path = parentFolder+name.toLowerCase()+"/";
+        if(folderRepository.findByPathAndActiveTrue(path.toLowerCase()+"/").isPresent()) throw new Exception("Folder Already Exists with the Same Name in Lower Case");
+        if(folderRepository.findByPathAndActiveTrue(path.toUpperCase()+"/").isPresent()) throw new Exception("Folder Already Exists with the Same Name in Upper Case");
+        name = name.toLowerCase();
         path = URLDecoder.decode(path, StandardCharsets.UTF_8);
         name = URLDecoder.decode(name, StandardCharsets.UTF_8);
         if(folderRepository.findByPathAndActiveTrue(path).isPresent()){
@@ -150,6 +174,11 @@ public class FolderService {
     }
 
     public List<FolderResponse> list(String path) throws Exception {
+        jwtUtil.getAuthenticatedUserFromContext();
+        if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
+        if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path,StandardCharsets.UTF_8);
+
         Folder folder = folderRepository.findByPathAndActiveTrue(path).orElseThrow(() -> new RuntimeException("Error"));
         if(folder.getType()==Folder.FolderType.FILE) throw new Exception("Path must be a Folder Not a FILE!!!");
         List<Folder> listResult = folderRepository.findByParentIdAndActiveTrue(folder.getId());
@@ -166,6 +195,11 @@ public class FolderService {
 
     @Transactional
     public boolean deleteFolder(String path) {
+        jwtUtil.getAuthenticatedUserFromContext();
+        if (path.length() == 2) throw new RuntimeException("Main Folder cannot be deleted");
+        if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
+        if (!path.endsWith("/")) path += "/";
+        path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
 
         Folder folder = folderRepository.findByPathAndActiveTrue(path)
                 .orElseThrow(() -> new RuntimeException("Folder Or File not found"));

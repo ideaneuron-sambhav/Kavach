@@ -4,6 +4,7 @@ import com.login.Login.dto.Response;
 import com.login.Login.entity.Folder;
 import com.login.Login.entity.User;
 import com.login.Login.repository.FolderRepository;
+import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,15 +36,18 @@ public class FileService {
     JwtUtil jwtUtil;
     @Autowired
     FolderRepository folderRepository;
+    @Autowired
+    UserRepository userRepository;
 
     @Transactional
-    public Response<Object> uploadFile(HttpServletRequest request, List<MultipartFile> files) throws IOException {
+    public Response<Object> uploadFile(String path, List<MultipartFile> files) throws IOException {
         Map<String, String> response = new HashMap<>();
         int i = 1;
         if (files.size() > 10) throw new RuntimeException("Only 10 files can be uploaded at a time!!!");
         for (MultipartFile file : files) {
             User user = jwtUtil.getAuthenticatedUserFromContext();
-            String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
+
+
             if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
             if (!path.endsWith("/")) path += "/";
             path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
@@ -82,9 +86,8 @@ public class FileService {
     }
 
     @Transactional
-    public ResponseEntity<Resource> downloadFile(HttpServletRequest request) throws IOException {
+    public ResponseEntity<Resource> downloadFile(String path) throws IOException {
         User user = jwtUtil.getAuthenticatedUserFromContext();
-        String path = user.getId() + "/" + request.getRequestURI().substring("/files/".length());
         path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
         if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
         if (!path.endsWith("/")) path += "/";

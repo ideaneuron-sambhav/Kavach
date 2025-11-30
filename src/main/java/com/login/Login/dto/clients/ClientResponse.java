@@ -26,6 +26,6 @@ public class ClientResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Map<String, Object> details;
-    private UserResponse user;
+    private UserResponse assignedUser;
 }
 

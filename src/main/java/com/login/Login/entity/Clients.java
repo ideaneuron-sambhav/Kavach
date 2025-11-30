@@ -28,18 +28,12 @@ public class Clients {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String firstName;
-
-    private String lastName;
+    @OneToOne
+    @JoinColumn(name = "user_id") //, columnDefinition = "integer[]"
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    private User userId;
 
     private String alias;
-
-    @Convert(converter = AesAttributeConverter.class)
-    @Email(message = "Invalid email format")
-    @Column(unique = true, nullable = false)
-    private String email;
-
 
     @Convert(converter = AesAttributeConverter.class)
     @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid mobile number")

@@ -37,8 +37,8 @@ public class ClientService {
     JwtUtil jwtUtil;
     @Autowired
     ClientRepository clientRepository;
-    @Autowired
-    CredentialsRepository credentialsRepository;
+/*    @Autowired
+    CredentialsRepository credentialsRepository;*/
     @Autowired
     GroupsRepository groupsRepository;
     @Autowired
@@ -57,9 +57,6 @@ public class ClientService {
             groups = groupsRepository.findById(request.getGroupId()).orElseThrow(()-> new RuntimeException("Group not exists"));
         }
 
-        if (clientRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Client with this email already exists");
-        }
         if(clientRepository.existsByAlias(request.getAlias())){
             throw new RuntimeException("Alias name already exists");
         }
@@ -69,10 +66,8 @@ public class ClientService {
         }
         User user = registerClient(request);
         Clients client = Clients.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
+                .userId(user)
                 .alias(request.getAlias())
-                .email(request.getEmail())
                 .mobileNumber(request.getMobileNumber())
                 .address(request.getAddress())
                 .groups(groups)
@@ -149,6 +144,7 @@ public class ClientService {
     }
 
 
+
     public Response<Map<String, Object>> viewClientNotes(Long id) {
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
@@ -181,12 +177,12 @@ public class ClientService {
         jwtUtil.ensureAdminFromContext();
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
-
-        if (request.getEmail() != null && !request.getEmail().equals(client.getEmail())) {
-            if (clientRepository.existsByEmail(request.getEmail())) {
+        User user = client.getUserId();
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepo.existsByEmail(request.getEmail())) {
                 throw new RuntimeException("Email already exists");
             }
-            client.setEmail(request.getEmail());
+            user.setEmail(request.getEmail());
         }
 
         if (request.getMobileNumber() != null && !request.getMobileNumber().equals(client.getMobileNumber())) {
@@ -203,8 +199,6 @@ public class ClientService {
             client.setAlias(request.getAlias());
         }
 
-        if (request.getFirstName() != null) client.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) client.setLastName(request.getLastName());
         if (request.getAddress() != null) client.setAddress(request.getAddress());
         if(request.getDetails() != null) client.setDetails(request.getDetails());
 
@@ -226,11 +220,6 @@ public class ClientService {
 
         client.setActive(!client.getActive());
         Clients updated = clientRepository.save(client);
-        if (client.getActive()) {
-            credentialsRepository.activateAllByClientId(updated.getId());
-        } else {
-            credentialsRepository.deactivateAllByClientId(updated.getId());
-        }
 
         String status = updated.getActive() ? "activated" : "deactivated";
 
@@ -254,7 +243,7 @@ public class ClientService {
             return Response.<String>builder()
                     .data(null)
                     .httpStatusCode(200)
-                    .message("User unassigned from client " + clients.getFirstName() + " " + clients.getLastName())
+                    .message("User unassigned from client " + clients.getUserId().getFirstName() + " " + clients.getUserId().getLastName())
                     .build();
         }
 
@@ -270,7 +259,7 @@ public class ClientService {
         return Response.<String>builder()
                 .data(null)
                 .httpStatusCode(200)
-                .message("Client " + clients.getFirstName() + " " + clients.getLastName() + " assigned to user " + user.getFirstName())
+                .message("Client " + clients.getUserId().getFirstName() + " " + clients.getUserId().getLastName() + " assigned to user " + user.getFirstName())
                 .build();
     }
 
@@ -290,6 +279,7 @@ public class ClientService {
                     .active(client.getGroups().isActive())
                     .build();
         }
+
         if (client.getAssignedUser() != null) {
             userResponse= UserResponse.builder()
                     .id(client.getAssignedUser().getId())
@@ -301,10 +291,10 @@ public class ClientService {
 
         return ClientResponse.builder()
                 .id(client.getId())
-                .firstName(client.getFirstName())
-                .lastName(client.getLastName())
+                .firstName(client.getUserId().getFirstName())
+                .lastName(client.getUserId().getLastName())
                 .alias(client.getAlias())
-                .email(client.getEmail())
+                .email(client.getUserId().getEmail())
                 .mobileNumber(client.getMobileNumber())
                 .address(client.getAddress())
                 .type(client.getType())
@@ -313,7 +303,7 @@ public class ClientService {
                 .createdAt(client.getCreatedAt())
                 .updatedAt(client.getUpdatedAt())
                 .details(client.getDetails())
-                .user(userResponse)
+                .assignedUser(userResponse)
                 .build();
     }
     @Transactional
@@ -343,7 +333,7 @@ public class ClientService {
             String roleName = request.getRole()!= null ? request.getRole() : "user";
             Role role = roleRepository.findByNameIgnoreCase(roleName)
             .orElseThrow(()-> new RuntimeException("Role not found: "+ roleName));
-*/          Role role = roleRepository.findByNameIgnoreCase("client")
+*/          Role role = roleRepository.findByNameIgnoreCase("clients")
                     .orElseThrow(() -> new RuntimeException("Role not found: " + "Clients"));
 
             // Create user
