@@ -10,6 +10,7 @@ import com.login.Login.repository.RoleRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
 import com.login.Login.service.email.EmailService;
+import com.login.Login.service.email.JwtPasswordService;
 import com.login.Login.service.folder.FolderService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,10 @@ public class UserService {
     BCryptPasswordEncoder passwordEncoder;
     @Autowired
     EmailService emailService;
+    @Autowired
+    JwtPasswordService jwtPasswordService;
+
+    private static final String url = "http://kavach.com";
 
     public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
         jwtUtil.ensureAdminFromContext();
@@ -105,7 +110,6 @@ public class UserService {
             String password = generatePassword(request.getFirstName());
             String encodedPassword = passwordEncoder.encode(password);
             //emailService.sendPasswordEmail(request.getEmail(), password);
-            System.out.println(password);
 
             String requestedRole = request.getRole();
             role = roleRepository.findByNameIgnoreCase(requestedRole)
@@ -117,6 +121,7 @@ public class UserService {
                     .email(request.getEmail().toLowerCase())
                     .password(encodedPassword)
                     .role(role)
+                    .hashPIN(null)
                     .active(true)
                     .build();
 
@@ -124,7 +129,9 @@ public class UserService {
             Folder folder = folderService.createUserRootFolder(user.getId());
             user.setRootFolder(folder);
             userRepo.save(user);
-
+            String token = jwtPasswordService.generatePasswordResetToken(user.getEmail());
+            String resetLink = url + "/reset-password?token=" + token;
+            emailService.sendRegistrationEmail(user.getEmail(), resetLink);
             return Response.<UserResponse>builder()
                     .data(UserResponse.builder()
                             .id(user.getId())
@@ -148,6 +155,8 @@ public class UserService {
             throw new RuntimeException("Error registering user: " + e.getMessage());
         }
     }
+
+
     @Transactional
     public Response<UserResponse> toggleUser(Long userId) {
         jwtUtil.ensureAdminFromContext();
@@ -191,6 +200,32 @@ public class UserService {
                 .message((user.getActive() ? "User activated" : "User deactivated") + " by admin: " + adminUser.getEmail())
                 .build();
     }
+
+    public Response<Object> sendPasswordResetEmail(String email) {
+        String token = jwtPasswordService.generatePasswordResetToken(email);
+        String resetLink = url + "/reset-password?token=" + token;
+        emailService.sendPasswordLinkEmail(email,resetLink);
+        return Response.builder().data(null).httpStatusCode(200).message("Password reset link sent to email.").build();
+    }
+
+    @Transactional
+    public Response<Object> updateHashPIN(String PIN) {
+        User user = jwtUtil.getAuthenticatedUserFromContext();
+        if (PIN == null || !PIN.matches("\\d{6}")) {
+            throw new RuntimeException("PIN must be 6 digits and numeric.");
+        }
+        user.setHashPIN(passwordEncoder.encode(PIN));
+        return Response.builder().data(null).httpStatusCode(200).message("PIN updated successfully!").build();
+    }
+
+    @Transactional
+    public Response<Object> updatePassword(String email, String newPassword) {
+        User user =userRepo.findByEmail(email).orElseThrow(()-> new RuntimeException("User Not Found!"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return Response.builder().data(null).httpStatusCode(200).message("Password updated successfully!").build();
+    }
+
+
     private String generatePassword(String name) {
 
         String clean = name.trim().toUpperCase();
@@ -204,6 +239,5 @@ public class UserService {
 
         return firstFour + digits;
     }
-
 
 }

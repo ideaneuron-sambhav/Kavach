@@ -13,6 +13,7 @@ public class AuthResponse {
     private String lastName;
     private String email;
     private String role;
+    private boolean registeredPIN;
     private List<String> permissions;
     private List<Long> permissionIds;
 

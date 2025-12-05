@@ -124,6 +124,7 @@ public class AuthService {
                 user.getLastName(),
                 user.getEmail(),
                 user.getRole().getName(),
+                (user.getHashPIN() == null),
                 permissionStrings,
                 permissionIds
         );

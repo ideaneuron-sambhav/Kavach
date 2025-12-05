@@ -21,6 +21,8 @@ public class ClientRequest {
 
     private String alias;
 
+    private String PIN;
+
     @Email(message = "Invalid email format")
     @NotNull(message = "Email cannot be blank")
     private String email;

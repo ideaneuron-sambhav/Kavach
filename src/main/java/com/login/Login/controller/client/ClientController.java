@@ -50,6 +50,11 @@ public class ClientController {
         return ResponseEntity.ok(clientService.viewClientNotes(id));
     }
 
+    @GetMapping("/details/{id}")
+    public ResponseEntity<Response<?>> viewClientDetails(@PathVariable Long id, @RequestBody ClientRequest request) {
+        return ResponseEntity.ok(clientService.viewClientDetails(id, request.getPIN()));
+    }
+
     // Update client data
     @PutMapping("/update/{id}")
     public ResponseEntity<Response<ClientResponse>> updateClient(@PathVariable Long id,
@@ -59,8 +64,14 @@ public class ClientController {
 
     @PutMapping("/update/notes/{id}")
     public ResponseEntity<Response<?>> updateNotes(@PathVariable Long id,
-                                                                 @RequestBody ClientRequest request) {
+                                                   @RequestBody ClientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clientService.updateClientNotes(id, request.getNotes()));
+    }
+
+    @PutMapping("/details/notes/{id}")
+    public ResponseEntity<Response<?>> updateDetails(@PathVariable Long id,
+                                                   @RequestBody ClientRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clientService.updateClientDetails(id, request.getDetails(), request.getPIN()));
     }
 
     // Assign a Client to Specific User using User_ID and Client_ID

@@ -1,6 +1,5 @@
 package com.login.Login.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.login.Login.crypto.AesAttributeConverter;
 import jakarta.validation.constraints.Email;
@@ -43,6 +42,8 @@ public class User {
     @JsonIgnore
     @Column(nullable = false)
     private String password;
+
+    private String hashPIN;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "folder_id")

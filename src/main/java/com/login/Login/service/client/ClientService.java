@@ -3,12 +3,13 @@ package com.login.Login.service.client;
 import com.login.Login.dto.Response;
 import com.login.Login.dto.clients.*;
 import com.login.Login.dto.groups.GroupsResponse;
+import com.login.Login.dto.user.UserRequest;
 import com.login.Login.dto.user.UserResponse;
 import com.login.Login.entity.*;
+import com.login.Login.exception.InvalidCredentialsException;
 import com.login.Login.repository.*;
 import com.login.Login.security.JwtUtil;
-import com.login.Login.service.email.EmailService;
-import com.login.Login.service.folder.FolderService;
+import com.login.Login.service.user.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,17 +19,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import org.springframework.data.domain.Pageable;
-
-import java.security.SecureRandom;
 import java.util.Map;
+
 
 @Service
 @RequiredArgsConstructor
 public class ClientService {
-    @Autowired
-    FolderService folderService;
     @Autowired
     ClientRepository clientRepo;
     @Autowired
@@ -42,11 +39,9 @@ public class ClientService {
     @Autowired
     GroupsRepository groupsRepository;
     @Autowired
+    UserService userService;
+    @Autowired
     BCryptPasswordEncoder passwordEncoder;
-    @Autowired
-    EmailService emailService;
-    @Autowired
-    RoleRepository roleRepository;
 
 
     @Transactional
@@ -143,11 +138,56 @@ public class ClientService {
                 .build();
     }
 
+    public Response<Map<String, Object>> viewClientDetails(Long id, String PIN) {
+        Clients client = clientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
+        User user = jwtUtil.getAuthenticatedUserFromContext();
+        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())||client.getAssignedUser()!=user){
+            throw new RuntimeException("Access Denied");
+        }
+        if (PIN == null || !PIN.matches("\\d{6}")) {
+            throw new RuntimeException("PIN must be 6 digits and numeric.");
+        }
+        if (!passwordEncoder.matches(PIN, user.getHashPIN())) {
+            throw new InvalidCredentialsException("Wrong PIN!");
+        }
+        ClientResponse cr =  ClientResponse.builder().details(client.getDetails()).build();
+        return Response.<Map<String, Object>>builder()
+                .data(cr.getDetails())
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("Client Details fetched successfully")
+                .build();
+    }
+
+    public Response<Map<String, Object>> updateClientDetails(Long id,  Map<String, Object> details, String PIN) {
+        jwtUtil.ensureAdminFromContext();
+        User user = jwtUtil.getAuthenticatedUserFromContext();
+        if (PIN == null || !PIN.matches("\\d{6}")) {
+            throw new RuntimeException("PIN must be 6 digits and numeric.");
+        }
+        if (!passwordEncoder.matches(PIN, user.getHashPIN())) {
+            throw new InvalidCredentialsException("Wrong PIN!");
+        }
+        Clients client = clientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
+        if (details != null) client.setDetails(details);
+        Clients updated = clientRepository.save(client);
+
+        return Response.<Map<String, Object>>builder()
+                .data(null)
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("Client Notes updated successfully")
+                .build();
+    }
 
 
     public Response<Map<String, Object>> viewClientNotes(Long id) {
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
+        User user = jwtUtil.getAuthenticatedUserFromContext();
+        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())||client.getAssignedUser()!=user){
+            throw new RuntimeException("Access Denied");
+        }
         ClientResponse cr =  ClientResponse.builder().notes(client.getNotes()).build();
         String str ="";
         if(cr.getNotes()!=null) str = cr.getNotes();
@@ -200,7 +240,6 @@ public class ClientService {
         }
 
         if (request.getAddress() != null) client.setAddress(request.getAddress());
-        if(request.getDetails() != null) client.setDetails(request.getDetails());
 
 
         Clients updated = clientRepository.save(client);
@@ -302,7 +341,7 @@ public class ClientService {
                 .active(client.getActive())
                 .createdAt(client.getCreatedAt())
                 .updatedAt(client.getUpdatedAt())
-                .details(client.getDetails())
+                .details(null)       //client.getDetails()
                 .assignedUser(userResponse)
                 .build();
     }
@@ -310,50 +349,15 @@ public class ClientService {
     private User registerClient(ClientRequest request){
         try {
             jwtUtil.ensureAdminFromContext();
-
-            // Validate required fields
-            if (request.getEmail() == null || request.getEmail().isBlank()) {
-                throw new RuntimeException("Email cannot be empty");
-            }
-
-            if (request.getFirstName() == null || request.getFirstName().isBlank()) {
-                throw new RuntimeException("First name cannot be empty");
-            }
-
-            // Check if email already exists
-            if (userRepo.findByEmail(request.getEmail().toLowerCase()).isPresent()) {
-                throw new RuntimeException("Email already registered in User Panel");
-            }
-
-            String password = generatePassword(request.getFirstName());
-            String encodedPassword = passwordEncoder.encode(password);
-            System.out.println(password);
-            //emailService.sendPasswordEmail(request.getEmail(), password);
+            UserRequest userRequest = new UserRequest(request.getFirstName(), request.getLastName(), request.getEmail(), null,"clients");
+            Response<UserResponse> response = userService.registerUser(userRequest);
+            User user = userRepo.findById(response.getData().getId()).orElseThrow(()-> new RuntimeException("ERROR IN CLIENTS!!! WHILE REGISTERING CLIENT"));
 /*          Assigning role to admin if its null or blank
             String roleName = request.getRole()!= null ? request.getRole() : "user";
             Role role = roleRepository.findByNameIgnoreCase(roleName)
             .orElseThrow(()-> new RuntimeException("Role not found: "+ roleName));
-*/          Role role = roleRepository.findByNameIgnoreCase("clients")
-                    .orElseThrow(() -> new RuntimeException("Role not found: " + "Clients"));
-
-            // Create user
-            User user = User.builder()
-                    .firstName(request.getFirstName())
-                    .lastName(request.getLastName())
-                    .email(request.getEmail().toLowerCase())
-                    .role(role)
-                    .password(encodedPassword)
-                    .active(true)
-                    .build();
-
-            userRepo.save(user);
-            Folder folder = folderService.createUserRootFolder(user.getId());
-            user.setRootFolder(folder);
-            userRepo.save(user);
-
+*/
             return user;
-
-
         } catch (DataIntegrityViolationException e) {
             throw new RuntimeException("Database constraint violation: " + e.getMostSpecificCause().getMessage());
         } catch (RuntimeException e) {
@@ -361,19 +365,6 @@ public class ClientService {
         } catch (Exception e) {
             throw new RuntimeException("Error registering user: " + e.getMessage());
         }
-    }
-    private String generatePassword(String name) {
-
-        String clean = name.trim().toUpperCase();
-
-        // First four letters (pad with x if less than 4)
-        String firstFour = clean.length() >= 4 ? clean.substring(0, 4) : String.format("%-4s", clean).replace(' ', 'X');
-
-        // Generate 4 random digits
-        SecureRandom random = new SecureRandom();
-        int digits = 1000 + random.nextInt(9000);
-
-        return firstFour + digits;
     }
 
 }

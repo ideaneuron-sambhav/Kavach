@@ -1,12 +1,10 @@
 package com.login.Login;
 
-import com.login.Login.dto.user.UserRequest;
 import com.login.Login.entity.*;
 import com.login.Login.repository.FolderRepository;
 import com.login.Login.repository.PermissionRepository;
 import com.login.Login.repository.RoleRepository;
 import com.login.Login.repository.UserRepository;
-import com.login.Login.service.user.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
