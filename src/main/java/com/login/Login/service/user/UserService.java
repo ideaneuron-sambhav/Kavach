@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -223,6 +224,63 @@ public class UserService {
         User user =userRepo.findByEmail(email).orElseThrow(()-> new RuntimeException("User Not Found!"));
         user.setPassword(passwordEncoder.encode(newPassword));
         return Response.builder().data(null).httpStatusCode(200).message("Password updated successfully!").build();
+    }
+
+    public Response<?> updateUserRole(Long id, String roleName){
+        jwtUtil.ensureAdminFromContext();
+        User user = userRepo.findById(id).orElseThrow(()-> new RuntimeException("User Not Found"));
+        Role role = roleRepository.findByNameIgnoreCase(roleName).orElseThrow(()-> new RuntimeException("Role Not Found"));
+        user.setRole(role);
+        userRepo.save(user);
+        return Response.builder().httpStatusCode(201).message("Role Updated Successfully!").build();
+    }
+
+    public Response<?> toggleActive(Long id){
+        jwtUtil.ensureAdminFromContext();
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+
+        user.setActive(!user.getActive());
+        User updated = userRepo.save(user);
+
+        String status = updated.getActive() ? "activated" : "deactivated";
+
+        return Response.builder()
+                .data(null)
+                .httpStatusCode(HttpStatus.OK.value())
+                .message("User " + status + " successfully")
+                .build();
+    }
+
+    public Response<UserResponse> updateUser(UserRequest request){
+        User user = jwtUtil.getAuthenticatedUserFromContext();
+        if (request.getFirstName() != null && !request.getFirstName().equals(user.getFirstName())) {
+            user.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null && !request.getLastName().equals(user.getLastName())) {
+            user.setLastName(request.getLastName());
+        }
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepo.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+            user.setEmail(request.getEmail());
+        }
+        User user1 = userRepo.save(user);
+        return Response.<UserResponse>builder()
+                .data(UserResponse.builder()
+                        .id(user1.getId())
+                        .firstName(user1.getFirstName())
+                        .lastName(user1.getLastName())
+                        .email(user1.getEmail().toLowerCase())
+                        .role(user1.getRole().getName())
+                        .permissionIds(user1.getPermissions())
+                        .active(user1.getActive())
+                        .build())
+                .httpStatusCode(200)
+                .message("User Updated Successfully")
+                .build();
+
     }
 
 

@@ -46,6 +46,9 @@ public class AuthService {
         User user = userRepo.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
+        if(user.getActive()!=true){
+            throw new RuntimeException("User Inactive - Contact admin");
+        }
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException("Wrong Password!");
         }

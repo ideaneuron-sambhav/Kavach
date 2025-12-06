@@ -2,7 +2,6 @@ package com.login.Login.entity;
 
 import com.login.Login.crypto.AesAttributeConverter;
 import com.login.Login.crypto.EncryptedJsonConverter;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 

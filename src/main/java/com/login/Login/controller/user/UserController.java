@@ -2,6 +2,7 @@ package com.login.Login.controller.user;
 
 import com.login.Login.dto.Response;
 import com.login.Login.dto.user.UserRequest;
+import com.login.Login.dto.user.UserResponse;
 import com.login.Login.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,21 @@ public class UserController {
                                                  @RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(userService.listUsers(search, page, size));
+    }
 
+    @PutMapping("/update/")       //Profile Section API
+    public ResponseEntity<Response<UserResponse>> updateUser(@RequestBody UserRequest request) {
+        return ResponseEntity.ok(userService.updateUser(request));
+    }
+
+    @PutMapping("/update/{id}/{role}")
+    public ResponseEntity<Response<?>> updateUserRole(@PathVariable Long id,
+                                                                 @PathVariable String role) {
+        return ResponseEntity.ok(userService.updateUserRole(id, role));
+    }
+
+    @PutMapping("/toggle/{id}")
+    public ResponseEntity<Response<?>> toggleActiveStatus(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.toggleActive(id));
     }
 }

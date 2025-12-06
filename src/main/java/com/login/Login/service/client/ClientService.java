@@ -171,7 +171,7 @@ public class ClientService {
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
         if (details != null) client.setDetails(details);
-        Clients updated = clientRepository.save(client);
+        clientRepository.save(client);
 
         return Response.<Map<String, Object>>builder()
                 .data(null)
@@ -224,6 +224,12 @@ public class ClientService {
             }
             user.setEmail(request.getEmail());
         }
+        if (request.getFirstName() != null && !request.getFirstName().equals(user.getFirstName())) {
+            user.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null && !request.getLastName().equals(user.getLastName())) {
+            user.setLastName(request.getLastName());
+        }
 
         if (request.getMobileNumber() != null && !request.getMobileNumber().equals(client.getMobileNumber())) {
             if (clientRepository.existsByMobileNumber(request.getMobileNumber())) {
@@ -242,6 +248,7 @@ public class ClientService {
         if (request.getAddress() != null) client.setAddress(request.getAddress());
 
 
+        userRepo.save(user);
         Clients updated = clientRepository.save(client);
 
         return Response.<ClientResponse>builder()
