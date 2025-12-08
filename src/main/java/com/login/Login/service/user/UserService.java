@@ -6,6 +6,7 @@ import com.login.Login.dto.user.UserResponse;
 import com.login.Login.entity.Folder;
 import com.login.Login.entity.Role;
 import com.login.Login.entity.User;
+import com.login.Login.exception.InvalidCredentialsException;
 import com.login.Login.repository.RoleRepository;
 import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
@@ -207,6 +208,20 @@ public class UserService {
         String resetLink = url + "/reset-password?token=" + token;
         emailService.sendPasswordLinkEmail(email,resetLink);
         return Response.builder().data(null).httpStatusCode(200).message("Password reset link sent to email.").build();
+    }
+
+    @Transactional
+    public Response<Object> changePassword(UserRequest request) {
+        User user = jwtUtil.getAuthenticatedUserFromContext();
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException("Wrong Password!");
+        }
+        if(request.getPassword().equals(request.getConfirmPassword())){
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }else{
+            throw new RuntimeException("Password mismatched");
+        }
+        return Response.builder().data(null).httpStatusCode(200).message("PIN updated successfully!").build();
     }
 
     @Transactional

@@ -31,6 +31,10 @@ public class UserRequest {
     @Column(nullable = false)
     private String password;
 
+    private String oldPassword;
+
+    private String confirmPassword;
+
     @NotNull(message = "Role Cannot be empty")
     @Column(nullable = false)
     private String role;

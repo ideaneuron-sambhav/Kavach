@@ -3,6 +3,7 @@ package com.login.Login.controller.auth;
 
 import com.login.Login.dto.Response;
 import com.login.Login.dto.otp.OtpVerifyRequest;
+import com.login.Login.dto.user.UserRequest;
 import com.login.Login.service.email.JwtPasswordService;
 import com.login.Login.service.auth.AuthService;
 import com.login.Login.dto.auth.LoginRequest;
@@ -49,6 +50,10 @@ public class AuthController {
         return ResponseEntity.ok(userService.updateHashPIN(PIN));
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<Response<?>> changePassword(@RequestBody UserRequest request){
+        return ResponseEntity.ok(userService.changePassword(request));
+    }
 
 
     @PostMapping("/forgot-password")
