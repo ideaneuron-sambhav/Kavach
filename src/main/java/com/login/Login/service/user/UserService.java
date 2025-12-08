@@ -46,7 +46,7 @@ public class UserService {
     @Autowired
     JwtPasswordService jwtPasswordService;
 
-    private static final String url = "http://kavach.com";
+    private static final String url = "http://localhost:9999";
 
     public Response<Page<UserResponse>> listUsers(String keyword, int page, int size) {
         jwtUtil.ensureAdminFromContext();
@@ -204,8 +204,11 @@ public class UserService {
     }
 
     public Response<Object> sendPasswordResetEmail(String email) {
+        if(!userRepo.existsByEmail(email)){
+            throw new RuntimeException("User Not Found!");
+        }
         String token = jwtPasswordService.generatePasswordResetToken(email);
-        String resetLink = url + "/reset-password?token=" + token;
+        String resetLink = url + "/auth/reset-password?token=" + token;
         emailService.sendPasswordLinkEmail(email,resetLink);
         return Response.builder().data(null).httpStatusCode(200).message("Password reset link sent to email.").build();
     }
@@ -221,7 +224,7 @@ public class UserService {
         }else{
             throw new RuntimeException("Password mismatched");
         }
-        return Response.builder().data(null).httpStatusCode(200).message("PIN updated successfully!").build();
+        return Response.builder().data(null).httpStatusCode(200).message("Password updated successfully!").build();
     }
 
     @Transactional

@@ -1,5 +1,4 @@
 package com.login.Login.dto.user;
-import com.login.Login.entity.Role;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
