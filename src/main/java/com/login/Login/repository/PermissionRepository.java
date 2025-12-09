@@ -1,6 +1,5 @@
 package com.login.Login.repository;
 
-import com.login.Login.entity.Clients;
 import com.login.Login.entity.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;

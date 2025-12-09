@@ -15,7 +15,7 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        final String securitySchemeName = "bearerAuth";
+        final String securitySchemeName = "Jwt Token";
 
         return new OpenAPI()
                 // Add JWT Authentication support in Swagger
@@ -35,9 +35,9 @@ public class SwaggerConfig {
                                 """)
                         .version("1.0.0")
                         .contact(new Contact()
-                                .name("IDEA NEURON")
-                                .email("hello@ideaneuron.com")
-                                .url("https://www.ideaneuron.com"))
+                                .name("KAVACH")
+                                .email("contact@kavach.com")
+                                .url("https://www.kavach.com"))
                         .license(new License()
                                 .name("IDEA NEURON")
                                 .url("https://www.ideaneuron.com"))

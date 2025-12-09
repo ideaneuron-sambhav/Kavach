@@ -71,12 +71,12 @@ public class AuthController {
     }
 
     @PostMapping("/set-password")
-    public ResponseEntity<Response<?>> setPassword(@RequestParam String token, @RequestParam String newPassword) {
+    public ResponseEntity<Response<?>> setPassword(@RequestParam String token, @RequestBody UserRequest request) {
         if (!jwtPasswordService.validatePasswordResetToken(token)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.builder().data(null).httpStatusCode(HttpStatus.BAD_REQUEST.value()).message("Invalid or expired token!").build());
         }
         String email = jwtPasswordService.getEmailFromResetToken(token);
-        return ResponseEntity.ok(userService.updatePassword(email, newPassword));
+        return ResponseEntity.ok(userService.updatePassword(email, request.getPassword(), request.getConfirmPassword()));
     }
 
 

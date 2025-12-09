@@ -238,9 +238,13 @@ public class UserService {
     }
 
     @Transactional
-    public Response<Object> updatePassword(String email, String newPassword) {
+    public Response<Object> updatePassword(String email, String newPassword, String confirmPassword) {
         User user =userRepo.findByEmail(email).orElseThrow(()-> new RuntimeException("User Not Found!"));
-        user.setPassword(passwordEncoder.encode(newPassword));
+        if(newPassword.equals(confirmPassword)){
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }else{
+            throw new RuntimeException("Password mismatched");
+        }
         return Response.builder().data(null).httpStatusCode(200).message("Password updated successfully!").build();
     }
 

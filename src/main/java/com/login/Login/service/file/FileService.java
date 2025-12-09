@@ -4,7 +4,6 @@ import com.login.Login.dto.Response;
 import com.login.Login.entity.Folder;
 import com.login.Login.entity.User;
 import com.login.Login.repository.FolderRepository;
-import com.login.Login.repository.UserRepository;
 import com.login.Login.security.JwtUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -36,8 +33,6 @@ public class FileService {
     JwtUtil jwtUtil;
     @Autowired
     FolderRepository folderRepository;
-    @Autowired
-    UserRepository userRepository;
 
     @Transactional
     public Response<Object> uploadFile(String path, List<MultipartFile> files) throws IOException {
@@ -87,7 +82,7 @@ public class FileService {
 
     @Transactional
     public ResponseEntity<Resource> downloadFile(String path) throws IOException {
-        User user = jwtUtil.getAuthenticatedUserFromContext();
+        jwtUtil.getAuthenticatedUserFromContext();
         path = java.net.URLDecoder.decode(path, StandardCharsets.UTF_8);
         if (path.startsWith("/")) throw new RuntimeException("Path is incorrect!!!");
         if (!path.endsWith("/")) path += "/";

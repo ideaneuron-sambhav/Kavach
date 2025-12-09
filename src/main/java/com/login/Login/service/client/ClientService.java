@@ -34,8 +34,6 @@ public class ClientService {
     JwtUtil jwtUtil;
     @Autowired
     ClientRepository clientRepository;
-/*    @Autowired
-    CredentialsRepository credentialsRepository;*/
     @Autowired
     GroupsRepository groupsRepository;
     @Autowired
@@ -106,7 +104,7 @@ public class ClientService {
         return Response.<Page<ClientResponse>>builder()
                 .data(responsePage)
                 .httpStatusCode(HttpStatus.OK.value())
-                .message("Client list fetched successfully for group: "+ group.getName())
+                .message("Client list fetched successfully for group: " + group.getName())
                 .build();
     }
 
@@ -358,13 +356,12 @@ public class ClientService {
             jwtUtil.ensureAdminFromContext();
             UserRequest userRequest = new UserRequest(request.getFirstName(), request.getLastName(), request.getEmail(), null,"clients");
             Response<UserResponse> response = userService.registerUser(userRequest);
-            User user = userRepo.findById(response.getData().getId()).orElseThrow(()-> new RuntimeException("ERROR IN CLIENTS!!! WHILE REGISTERING CLIENT"));
-/*          Assigning role to admin if its null or blank
+            /*          Assigning role to admin if its null or blank
             String roleName = request.getRole()!= null ? request.getRole() : "user";
             Role role = roleRepository.findByNameIgnoreCase(roleName)
             .orElseThrow(()-> new RuntimeException("Role not found: "+ roleName));
 */
-            return user;
+            return userRepo.findById(response.getData().getId()).orElseThrow(()-> new RuntimeException("ERROR IN CLIENTS!!! WHILE REGISTERING CLIENT"));
         } catch (DataIntegrityViolationException e) {
             throw new RuntimeException("Database constraint violation: " + e.getMostSpecificCause().getMessage());
         } catch (RuntimeException e) {
