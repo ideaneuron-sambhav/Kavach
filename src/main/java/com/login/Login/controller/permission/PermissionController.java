@@ -38,7 +38,7 @@ public class PermissionController {
     @GetMapping("/list")
     public Response<Page<Permission>> listPermissions(@RequestParam(defaultValue = "") String search,
                                                       @RequestParam(defaultValue = "0") int page,
-                                                      @RequestParam(defaultValue = "10") int size) {
+                                                      @RequestParam(defaultValue = "100 ") int size) {
         return permissionService.list(search, page, size);
     }
 
