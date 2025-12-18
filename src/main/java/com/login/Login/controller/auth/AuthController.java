@@ -2,6 +2,7 @@ package com.login.Login.controller.auth;
 
 
 import com.login.Login.dto.Response;
+import com.login.Login.dto.auth.SetHashPINDTO;
 import com.login.Login.dto.otp.OtpVerifyRequest;
 import com.login.Login.dto.user.UserRequest;
 import com.login.Login.service.email.JwtPasswordService;
@@ -45,14 +46,15 @@ public class AuthController {
         return ResponseEntity.ok(authService.logout(request));
     }
 
-    @PostMapping("/set-pin")        //Using JWT LOGIN TOKEN
-    public ResponseEntity<Response<?>> setHashPIN(@RequestParam String PIN) {
-        return ResponseEntity.ok(userService.updateHashPIN(PIN));
-    }
-
     @PostMapping("/change-password")
     public ResponseEntity<Response<?>> changePassword(@RequestBody UserRequest request){
         return ResponseEntity.ok(userService.changePassword(request));
+    }
+
+
+    @PostMapping("/set-pin")        //Using JWT LOGIN TOKEN
+    public ResponseEntity<Response<?>> setHashPIN(@RequestBody SetHashPINDTO body) {
+        return ResponseEntity.ok(userService.updateHashPIN(body.getPin()));
     }
 
 

@@ -47,7 +47,7 @@ public class ClientController {
         return ResponseEntity.ok(clientService.viewClientNotes(id));
     }
 
-    @GetMapping("/details/{id}")
+    @PostMapping("/details/{id}")
     public ResponseEntity<Response<?>> viewClientDetails(@PathVariable Long id, @RequestBody ClientRequest request) {
         return ResponseEntity.ok(clientService.viewClientDetails(id, request.getPIN()));
     }
@@ -65,7 +65,7 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.CREATED).body(clientService.updateClientNotes(id, request.getNotes()));
     }
 
-    @PutMapping("/details/notes/{id}")
+    @PutMapping("/update/details/{id}")
     public ResponseEntity<Response<?>> updateDetails(@PathVariable Long id,
                                                    @RequestBody ClientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clientService.updateClientDetails(id, request.getDetails(), request.getPIN()));

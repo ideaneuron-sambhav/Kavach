@@ -132,8 +132,9 @@ public class UserService {
             user.setRootFolder(folder);
             userRepo.save(user);
             String token = jwtPasswordService.generatePasswordResetToken(user.getEmail());
-            String resetLink = url + "/reset-password?token=" + token;
-            emailService.sendRegistrationEmail(user.getEmail(), resetLink);
+            String resetLink = url + "auth/reset-password?token=" + token;
+            System.out.println(resetLink);
+//            emailService.sendRegistrationEmail(user.getEmail(), resetLink);
             return Response.<UserResponse>builder()
                     .data(UserResponse.builder()
                             .id(user.getId())
@@ -209,7 +210,8 @@ public class UserService {
         }
         String token = jwtPasswordService.generatePasswordResetToken(email);
         String resetLink = url + "/auth/reset-password?token=" + token;
-        emailService.sendPasswordLinkEmail(email,resetLink);
+        System.out.println(resetLink);
+//        emailService.sendPasswordLinkEmail(email,resetLink);
         return Response.builder().data(null).httpStatusCode(200).message("Password reset link sent to email.").build();
     }
 

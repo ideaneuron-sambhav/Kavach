@@ -140,7 +140,7 @@ public class ClientService {
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
         User user = jwtUtil.getAuthenticatedUserFromContext();
-        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())||client.getAssignedUser()!=user){
+        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())&&!user.equals(client.getAssignedUser())){
             throw new RuntimeException("Access Denied");
         }
         if (PIN == null || !PIN.matches("\\d{6}")) {
@@ -183,7 +183,7 @@ public class ClientService {
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
         User user = jwtUtil.getAuthenticatedUserFromContext();
-        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())||client.getAssignedUser()!=user){
+        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())&&!user.equals(client.getAssignedUser())){
             throw new RuntimeException("Access Denied");
         }
         ClientResponse cr =  ClientResponse.builder().notes(client.getNotes()).build();
@@ -197,9 +197,13 @@ public class ClientService {
     }
 
     public Response<Map<String, Object>> updateClientNotes(Long id, String notes) {
-        jwtUtil.ensureAdminFromContext();
+        User user = jwtUtil.getAuthenticatedUserFromContext();
         Clients client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
+
+        if( !"ADMIN".equalsIgnoreCase(user.getRole().getName())&&!user.equals(client.getAssignedUser())){
+            throw new RuntimeException("Access Denied");
+        }
         if (notes != null) client.setNotes(notes);
         Clients updated = clientRepository.save(client);
 
